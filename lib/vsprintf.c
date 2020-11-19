@@ -2517,6 +2517,7 @@ qualifier:
 	case 'd':
 	case 'i':
 		spec->flags |= SIGN;
+		break;
 	case 'u':
 		break;
 
