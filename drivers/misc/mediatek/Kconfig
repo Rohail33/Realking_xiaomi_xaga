@@ -1,5 +1,11 @@
 # SPDX-License-Identifier: GPL-2.0
 
+config MTK_PLATFORM
+	string "MTK platform name"
+
+config ARCH_MTK_PROJECT
+	string "MTK project name"
+
 config MTK_DTBO_FEATURE
 	bool "Support Device Tree Overlay"
 	default y
