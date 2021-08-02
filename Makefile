@@ -1470,8 +1470,11 @@ export MTK_PLATFORM MTK_PROJECT
 %.dtb: include/config/kernel.release scripts_dtc $(DRVGEN_FILE_LIST)
 	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
 
+%.dtbo: include/config/kernel.release scripts_dtc $(DRVGEN_FILE_LIST)
+	$(Q)$(MAKE) $(build)=$(dtstree) $(dtstree)/$@
+
 PHONY += dtbs dtbs_install dtbs_check
-dtbs: include/config/kernel.release scripts_dtc dtbo_check
+dtbs: include/config/kernel.release scripts_dtc drvgen
 	$(Q)$(MAKE) $(build)=$(dtstree)
 
 ifneq ($(filter dtbs_check, $(MAKECMDGOALS)),)

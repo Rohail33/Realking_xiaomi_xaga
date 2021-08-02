@@ -30,11 +30,11 @@ endif #CONFIG_MTK_DTBO_FEATURE
 
 
 MAIN_DTB_NAMES := $(addsuffix .dtb,$(MAIN_DT_NAMES))
-PROJ_DTB_NAMES := $(addsuffix .dtb,$(PROJ_DT_NAMES))
+PROJ_DTB_NAMES := $(addsuffix .dtbo,$(PROJ_DT_NAMES))
 MAIN_DTB_FILES := $(addprefix $(objtree)/arch/$(SRCARCH)/boot/dts/, $(MAIN_DTB_NAMES))
 PROJ_DTB_FILES := $(addprefix $(objtree)/arch/$(SRCARCH)/boot/dts/, $(PROJ_DTB_NAMES))
 PROJ_DTS_FILES := $(addsuffix .dts,$(addprefix $(srctree)/arch/$(SRCARCH)/boot/dts/, $(PROJ_DT_NAMES)))
-ABS_DTB_FILES := $(abspath $(addsuffix .dtb,$(addprefix $(objtree)/arch/$(SRCARCH)/boot/dts/,$(PROJ_DT_NAMES))))
+ABS_DTB_FILES := $(abspath $(addsuffix .dtbo,$(addprefix $(objtree)/arch/$(SRCARCH)/boot/dts/,$(PROJ_DT_NAMES))))
 ABS_DTB2_FILES := $(abspath $(addprefix $(objtree)/arch/$(SRCARCH)/boot/,mtk.dtb))
 
 export PROJ_DTB_FILES
@@ -69,11 +69,6 @@ $(DRVGEN_FILE_LIST): $(DRVGEN_TOOL) $(DWS_FILE) $(DRVGEN_FIG) $(PROJ_DTS_FILES)
 			mkdir -p $$prj_path ;\
 			$(python) $(DRVGEN_TOOL) $$dws_path $$prj_path $$prj_path cust_dtsi;\
 		fi \
-	done
-
-dtbo_check: $(MAIN_DTB_NAMES) $(PROJ_DTB_NAMES)
-	for i in $(PROJ_DTB_FILES); do \
-		$(srctree)/scripts/dtc/ufdt_apply_overlay $(MAIN_DTB_FILES) $$i $$i.merge;\
 	done
 
 my_dtbo_id := 0
