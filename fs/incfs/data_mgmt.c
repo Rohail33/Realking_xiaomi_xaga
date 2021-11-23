@@ -454,7 +454,7 @@ static ssize_t zstd_decompress_safe(struct mount_info *mi,
 		mi->mi_zstd_stream = stream;
 	}
 
-	result = ZSTD_decompressStream(mi->mi_zstd_stream, &outbuf, &inbuf) ?
+	result = zstd_decompress_stream(mi->mi_zstd_stream, &outbuf, &inbuf) ?
 		-EBADMSG : outbuf.pos;
 
 	mod_delayed_work(system_wq, &mi->mi_zstd_cleanup_work,
