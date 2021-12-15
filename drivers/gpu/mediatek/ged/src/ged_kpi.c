@@ -259,8 +259,6 @@ static unsigned int is_GED_KPI_enabled = 1;
 
 static unsigned int g_force_gpu_dvfs_fallback;
 static int g_fb_dvfs_threshold = 80;
-static int idle_fw_set_flag;
-
 module_param(g_fb_dvfs_threshold, int, 0644);
 
 // module_param(gx_dfps, uint, 0644);
@@ -1008,14 +1006,6 @@ static void ged_kpi_work_cb(struct work_struct *psWork)
 					"TYPE_1: psKPI NULL, frameID: %lu\n",
 					psTimeStamp->i32FrameID);
 				goto work_cb_end;
-			}
-			/* set fw idle time if display Hz change */
-			if (idle_fw_set_flag == 1) {
-				if (g_target_fps_default <= 60)
-					mtk_set_gpu_idle(0);
-				else
-					mtk_set_gpu_idle(5);
-				idle_fw_set_flag = 0;
 			}
 
 			/* new data */
@@ -1938,9 +1928,10 @@ void ged_dfrc_fps_limit_cb(unsigned int target_fps)
 	GED_LOGI("[GED_KPI] dfrc_fps:%d, dfrc_time %u\n",
 		g_target_fps_default, g_target_time_default);
 #endif /* GED_KPI_DEBUG */
-
-	idle_fw_set_flag = 1;
-
+	if (target_fps <= 60)
+		mtk_set_gpu_idle(0);
+	else
+		mtk_set_gpu_idle(5);
 }
 /* ------------------------------------------------------------------- */
 GED_ERROR ged_kpi_system_init(void)
