@@ -162,7 +162,6 @@ ifndef KBUILD_MIXED_TREE
 all:	Image.gz
 endif
 
-
 Image: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
