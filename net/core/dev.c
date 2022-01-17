@@ -4243,7 +4243,7 @@ EXPORT_SYMBOL(__dev_direct_xmit);
  *			Receiver routines
  *************************************************************************/
 
-int netdev_max_backlog __read_mostly = 1000;
+int netdev_max_backlog __read_mostly = 16384;
 EXPORT_SYMBOL(netdev_max_backlog);
 
 int netdev_tstamp_prequeue __read_mostly = 1;
