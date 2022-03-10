@@ -81,6 +81,12 @@
 #define GED_KPI_FRC_SW_VSYNC_MODE   3
 #define GED_KPI_FRC_MODE_TYPE       int
 
+enum {
+	g_idle_set_finish,
+	g_idle_set_prepare,
+	g_idle_fix
+};
+
 struct GED_KPI_HEAD {
 	int pid;
 	int i32Count;
@@ -225,6 +231,7 @@ struct GED_KPI_MEOW_DVFS_FREQ_PRED {
 	int eara_fps_margin;
 	int gpu_time;
 };
+
 static struct GED_KPI_MEOW_DVFS_FREQ_PRED *g_psGIFT;
 
 int g_target_fps_default = GED_KPI_MAX_FPS;
@@ -260,13 +267,21 @@ static unsigned int is_GED_KPI_enabled = 1;
 static unsigned int g_force_gpu_dvfs_fallback;
 static int g_fb_dvfs_threshold = 80;
 static int idle_fw_set_flag;
+<<<<<<< HEAD
+=======
+static int g_is_idle_fw_enable;
+>>>>>>> 41fc35457eaa... [ALPS06388678] GPU:add ged fw_idle sysfs node
 
 module_param(g_fb_dvfs_threshold, int, 0644);
 
 // module_param(gx_dfps, uint, 0644);
 module_param(enable_gpu_boost, uint, 0644);
 module_param(is_GED_KPI_enabled, uint, 0644);
+<<<<<<< HEAD
 module_param(enable_cpu_boost, uint, 0644);
+=======
+
+>>>>>>> 41fc35457eaa... [ALPS06388678] GPU:add ged fw_idle sysfs node
 
 /* for calculating remained time budgets of CPU and GPU:
  *		time budget: the buffering time that prevents fram drop
@@ -1009,13 +1024,18 @@ static void ged_kpi_work_cb(struct work_struct *psWork)
 					psTimeStamp->i32FrameID);
 				goto work_cb_end;
 			}
-			/* set fw idle time if display Hz change */
-			if (idle_fw_set_flag == 1) {
-				if (g_target_fps_default <= 60)
-					mtk_set_gpu_idle(0);
-				else
+			/* powerhal scenario set default 5ms */
+			if (idle_fw_set_flag == g_idle_set_prepare) {
+				if (!g_is_idle_fw_enable) {
 					mtk_set_gpu_idle(5);
-				idle_fw_set_flag = 0;
+					idle_fw_set_flag = g_idle_set_finish;
+				} else {
+					if (g_target_fps_default <= 60)
+						mtk_set_gpu_idle(0);
+					else
+						mtk_set_gpu_idle(5);
+					idle_fw_set_flag = g_idle_set_finish;
+				}
 			}
 
 			/* new data */
@@ -1935,6 +1955,11 @@ unsigned int ged_kpi_get_cur_avg_gpu_freq(void)
 #endif /* MTK_GED_KPI */
 }
 /* ------------------------------------------------------------------- */
+unsigned int ged_kpi_get_fw_idle(void)
+{
+	return g_is_idle_fw_enable;
+}
+/* ------------------------------------------------------------------- */
 void ged_dfrc_fps_limit_cb(unsigned int target_fps)
 {
 	g_target_fps_default =
@@ -1946,7 +1971,7 @@ void ged_dfrc_fps_limit_cb(unsigned int target_fps)
 		g_target_fps_default, g_target_time_default);
 #endif /* GED_KPI_DEBUG */
 
-	idle_fw_set_flag = 1;
+	idle_fw_set_flag = g_idle_set_prepare;
 
 }
 /* ------------------------------------------------------------------- */
@@ -2069,6 +2094,13 @@ void ged_kpi_set_target_FPS_margin(u64 ulID, int target_FPS,
 #endif /* MTK_GED_KPI */
 }
 EXPORT_SYMBOL(ged_kpi_set_target_FPS_margin);
+/* ------------------------------------------------------------------- */
+void ged_kpi_set_fw_idle(unsigned int time)
+{
+	g_is_idle_fw_enable = time;
+	idle_fw_set_flag = g_idle_set_prepare;
+}
+EXPORT_SYMBOL(ged_kpi_set_fw_idle);
 /* ------------------------------------------------------------------- */
 
 static GED_BOOL ged_kpi_find_riskyBQ_func(unsigned long ulID,
