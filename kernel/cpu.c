@@ -1151,8 +1151,6 @@ static int cpu_down(unsigned int cpu, enum cpuhp_state target)
 	    !cpumask_intersects(&newmask, cpu_prime_mask))
 		return -EINVAL;
 
-	trace_android_vh_cpu_down(cpu);
-
 	cpu_maps_update_begin();
 	err = cpu_down_maps_locked(cpu, target);
 	cpu_maps_update_done();
