@@ -189,7 +189,7 @@ config SYMBOLIC_ERRNAME
 config DEBUG_BUGVERBOSE
 	bool "Verbose BUG() reporting (adds 70K)" if DEBUG_KERNEL && EXPERT
 	depends on BUG && (GENERIC_BUG || HAVE_DEBUG_BUGVERBOSE)
-	default y
+	default n
 	help
 	  Say Y here to make BUG() panics output the file name and line number
 	  of the BUG call as well as the EIP and oops trace.  This aids
@@ -201,7 +201,7 @@ menu "Compile-time checks and compiler options"
 
 config DEBUG_INFO
 	bool "Compile the kernel with debug info"
-	depends on DEBUG_KERNEL && !COMPILE_TEST
+	depends on !COMPILE_TEST
 	help
 	  If you say Y here the resulting kernel image will include
 	  debugging info resulting in a larger kernel image.
@@ -525,6 +525,7 @@ endmenu
 
 config DEBUG_KERNEL
 	bool "Kernel debugging"
+    default n
 	help
 	  Say Y here if you are developing drivers or trying to debug and
 	  identify kernel problems.
