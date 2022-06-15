@@ -1555,7 +1555,7 @@ static ssize_t min_freq_show(struct device *dev, struct device_attribute *attr,
 }
 static DEVICE_ATTR_RW(min_freq);
 
-static ssize_t max_freq_store(struct device *dev, struct device_attribute *attr,
+static ssize_t __maybe_unused max_freq_store(struct device *dev, struct device_attribute *attr,
 			      const char *buf, size_t count)
 {
 	struct devfreq *df = to_devfreq(dev);
@@ -1607,7 +1607,7 @@ static ssize_t max_freq_show(struct device *dev, struct device_attribute *attr,
 
 	return sprintf(buf, "%lu\n", max_freq);
 }
-static DEVICE_ATTR_RW(max_freq);
+static DEVICE_ATTR_RO(max_freq);
 
 static ssize_t available_frequencies_show(struct device *d,
 					  struct device_attribute *attr,
