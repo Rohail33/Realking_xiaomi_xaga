@@ -8,6 +8,11 @@ config MTK_FPSGO_V3
 	  FPSGO_V3 include AI performance and low power.
 	  If you are not sure about this, set n.
 
+config FEAS
+	tristate "Frame Energy Aware Scheduling"
+	help
+	  More power saving while meeting performance
+
 config MTK_PERFORMANCE_MODULE
 	tristate "Mediatek Performance Module"
 	help
