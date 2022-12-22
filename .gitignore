@@ -157,3 +157,8 @@ x509.genkey
 
 # Documentation toolchain
 sphinx_*/
+
+# trash
+out/
+*.log
+*.zip
