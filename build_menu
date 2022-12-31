@@ -57,7 +57,7 @@ build_tools(){
 
 variant(){
   findconfig=""
-  findconfig=($(ls arch/arm64/configs/release_* 2>/dev/null))
+  findconfig=($(ls arch/arm64/configs/gki_* 2>/dev/null))
   declare -i i=1
   shift 2
   for e in "${findconfig[@]}"; do
@@ -89,9 +89,9 @@ clean(){
 
 build_kernel(){
   variant
-  echo "${GREEN}***** Compiling kernel *****${STD}"
+  echo "${GREEN}***** Compiling kernel@@ DEFCONFIG SET TO $findconfig *****${STD}"
   [ ! -d "out" ] && mkdir out
-  make -j$(nproc) -C $(pwd) $KERNEL_MAKE_ENV release_defconfig
+  make -j$(nproc) -C $(pwd) $KERNEL_MAKE_ENV gki_defconfig
   make -j$(nproc) -C $(pwd) $KERNEL_MAKE_ENV
 
   [ -e arch/arm64/boot/Image.gz ] && cp arch/arm64/boot/Image.gz $(pwd)/out/Image.gz
