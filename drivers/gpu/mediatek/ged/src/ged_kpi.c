@@ -21,11 +21,8 @@
 
 #include <mt-plat/mtk_gpu_utility.h>
 
-#if defined(CONFIG_MTK_GPUFREQ_V2)
+
 #include <ged_gpufreq_v2.h>
-#else
-#include <ged_gpufreq_v1.h>
-#endif /* CONFIG_MTK_GPUFREQ_V2 */
 
 #ifdef GED_KPI_MET_DEBUG
 #include <mt-plat/met_drv.h>
@@ -62,11 +59,11 @@
 
 #define GED_KPI_MSEC_DIVIDER 1000000
 #define GED_KPI_SEC_DIVIDER 1000000000
-#define GED_KPI_MAX_FPS 60
+#define GED_KPI_MAX_FPS 144
 /* set default margin to be distinct from FPSGO(0 or 3) */
-#define GED_KPI_DEFAULT_FPS_MARGIN 4
+#define GED_KPI_DEFAULT_FPS_MARGIN 3
 #define GED_KPI_CPU_MAX_OPP 0
-#define GED_KPI_FPS_LIMIT 120
+#define GED_KPI_FPS_LIMIT 144
 
 #define GED_TIMESTAMP_TYPE_D    0x1
 #define GED_TIMESTAMP_TYPE_1    0x2
@@ -78,7 +75,7 @@
 #define GED_TIMESTAMP_TYPE      int
 
 /* No frame control is applied */
-#define GED_KPI_FRC_DEFAULT_MODE    0
+#define GED_KPI_FRC_DEFAULT_MODE    1
 #define GED_KPI_FRC_FRR_MODE        1
 #define GED_KPI_FRC_ARR_MODE        2
 #define GED_KPI_FRC_SW_VSYNC_MODE   3
@@ -167,17 +164,17 @@ struct GED_KPI {
 	unsigned long long ullTimeStampS;
 	unsigned long long ullTimeStampH;
 	unsigned int gpu_freq; /* in MHz*/
-	unsigned int gpu_freq_max; /* in MHz*/
-	unsigned int gpu_loading;
+	unsigned int gpu_freq_max=860; /* in MHz*/
+	unsigned int gpu_loading=100;
 	struct list_head sList;
 	long long t_cpu_remained;
 	long long t_gpu_remained;
 	int i32QedBuffer_length;
 	int i32Gpu_uncompleted;
 	int i32DebugQedBuffer_length;
-	int boost_linear_cpu;
-	int boost_real_cpu;
-	int boost_accum_gpu;
+	int boost_linear_cpu=1;
+	int boost_real_cpu=1;
+	int boost_accum_gpu=1;
 	long long t_cpu_remained_pred;
 	unsigned long long t_acquire_period;
 	unsigned long long QedBufferDelay;
@@ -188,7 +185,7 @@ struct GED_KPI {
 	int t_gpu_target;
 	int t_cpu_fpsgo;
 	int gpu_done_interval;
-	int target_fps_margin;
+	int target_fps_margin=90;
 	int eara_fps_margin;
 	int isSF;
 
@@ -218,13 +215,13 @@ struct GED_KPI_GPU_TS {
 
 struct GED_KPI_MEOW_DVFS_FREQ_PRED {
 	int gpu_freq_cur;
-	int gpu_freq_max;
+	int gpu_freq_max=860;
 	int gpu_freq_pred;
 	int gift_ratio;
 
 	int target_pid;
 	int target_fps;
-	int target_fps_margin;
+	int target_fps_margin=144;
 	int eara_fps_margin;
 	int gpu_time;
 };
@@ -249,10 +246,10 @@ static spinlock_t gs_hashtableLock;
 static struct GED_KPI g_asKPI[GED_KPI_TOTAL_ITEMS];
 static int g_i32Pos;
 static GED_THREAD_HANDLE ghThread;
-// static unsigned int gx_dfps; /* variable to fix FPS*/
+static unsigned int gx_dfps=144; /* variable to fix FPS*/
 
 static unsigned int enable_gpu_boost = 1;
-
+static unsigned int enable_cpu_boost = 1;
 #if !defined(CONFIG_MTK_GPU_COMMON_DVFS_SUPPORT)
 /* Disable for bring-up stage unexpected exception */
 static unsigned int is_GED_KPI_enabled;
@@ -267,6 +264,7 @@ module_param(g_fb_dvfs_threshold, int, 0644);
 // module_param(gx_dfps, uint, 0644);
 module_param(enable_gpu_boost, uint, 0644);
 module_param(is_GED_KPI_enabled, uint, 0644);
+module_param(enable_cpu_boost, uint, 0644);
 
 /* for calculating remained time budgets of CPU and GPU:
  *		time budget: the buffering time that prevents fram drop
