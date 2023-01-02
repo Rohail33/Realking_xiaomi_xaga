@@ -21,7 +21,7 @@ subdir-ccflags-y += -Wno-error
 ccflags-y += \
         -Wno-unused-variable \
         -Wno-unused-function
-
+         -Wno-implicit-function-declaration
 # ccflags-y += -DMTK_CPUFREQ
 # ccflags-y += -DGED_KPI_DEBUG
 ccflags-y += -DMTK_GPUFREQ_V2
