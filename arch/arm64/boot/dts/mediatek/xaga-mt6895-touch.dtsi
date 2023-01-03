@@ -59,7 +59,7 @@
 		pinctrl-0 = <&ts_cs_active &ts_int_active>;
 		pinctrl-1 = <&ts_cs_suspend &ts_int_suspend>;
 		pinctrl-2 = <&ts_spi_mode>;
-		spi-max-frequency = <13000000>;	//4800000,9600000,15000000,19200000
+		spi-max-frequency = <15000000>;	//4800000,9600000,15000000,19200000
 		super-resolution-factor = <10>;
 		novatek,irq-gpio = <&pio 135 0x2001>;
 
