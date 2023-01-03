@@ -22,6 +22,8 @@ ccflags-y += \
         -Wno-unused-variable \
         -Wno-unused-function \
         -Wno-implicit-function-declaration
+        -Wno-sometimes-uninitialized
+        -Wno-declaration-after-statement
 # ccflags-y += -DMTK_CPUFREQ
 # ccflags-y += -DGED_KPI_DEBUG
 ccflags-y += -DMTK_GPUFREQ_V2
