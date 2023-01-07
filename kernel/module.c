@@ -3547,7 +3547,7 @@ int __weak module_frob_arch_sections(Elf_Ehdr *hdr,
 }
 
 /* module_blacklist is a comma-separated list of module names */
-static char *module_blacklist;
+static char *module_blacklist = "zram,zsmalloc";
 static bool blacklisted(const char *module_name)
 {
 	const char *p;
@@ -4010,7 +4010,7 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	 * if it's blacklisted.
 	 */
 	if (blacklisted(info->name)) {
-		err = -EPERM;
+		err = 0;
 		pr_err("Module %s is blacklisted\n", info->name);
 		goto free_copy;
 	}
