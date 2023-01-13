@@ -1,4 +1,4 @@
-export CLANG_PATH=/home/Rohail/rohail33/kernel/clang-r416183b/bin
+export CLANG_PATH=/home/revolw/rohail33/kernel/clang-r416183b/bin
 export PATH=${BINUTILS_PATH}:${CLANG_PATH}:${PATH}
 make -j8 CC='ccache clang' ARCH=arm64 LLVM=1 LLVM_IAS=1 O=out gki_defconfig
 #!/bin/bash
@@ -6,10 +6,10 @@ make -j8 CC='ccache clang' ARCH=arm64 LLVM=1 LLVM_IAS=1 O=out gki_defconfig
 # Resources
 THREAD="-j$(nproc --all)"
 
-export CLANG_PATH=/home/Rohail/rohail33/kernel/clang-r416183b/bin/
+export CLANG_PATH=/home/revolw/rohail33/kernel/clang-r416183b/bin/
 export PATH=${CLANG_PATH}:${PATH}
 export CLANG_TRIPLE=aarch64-linux-gnu-
-export CROSS_COMPILE=/home/Rohail/rohail33/kernel/bin/aarch64-linux-gnu- CC=clang CXX=clang++
+export CROSS_COMPILE=/home/revolw/rohail33/kernel/bin/aarch64-linux-gnu- CC=clang CXX=clang++
 
 DEFCONFIG="gki_defconfig"
 
@@ -50,8 +50,8 @@ ls -a $ZIMAGE_DIR
 
 cd $KERNEL_DIR
 
-chown -R Rohail *
-chgrp -R Rohail *
+chown -R revolw *
+chgrp -R revolw *
 
 if grep -q "Error " kernel.log
 then
