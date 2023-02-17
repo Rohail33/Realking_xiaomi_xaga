@@ -165,6 +165,8 @@ endif
 
 KBUILD_DTBO_IMG := dtbo.img
 
+KBUILD_DTB_IMG := dtb.img
+
 Image: vmlinux
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
@@ -180,6 +182,10 @@ $(KBUILD_DTBO_IMG): dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
 all: $(KBUILD_DTBO_IMG)
+$(KBUILD_DTB_IMG): dtbs
+	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
+
+all: $(KBUILD_DTB_IMG)
 endif
 
 PHONY += vdso_install
