@@ -18,7 +18,30 @@
 #
 #
 
-ifeq ($(BUILD_RULE),OOT)
+
+
+
+MTK_PLATFORM_VERSION := $(CONFIG_MTK_PLATFORM:"%"=%)
+
+    ifeq ($(MTK_PLATFORM_VERSION),mt6789)
+    MTK_GPU_VERSION := $(LOCAL_MTK_GPU_VERSION)
+    MTK_PLATFORM := $(MTK_PLATFORM_VERSION)
+    CONFIG_MALI_REAL_HW := y
+    CONFIG_MALI_DEBUG := y
+    CONFIG_MALI_MIDGARD_DVFS := y
+    CONFIG_MALI_DEVFREQ := y
+    CONFIG_MALI_MTK_DEBUG := y
+    CONFIG_MALI_MTK_DEBUG_LOGBUF_KBASE := y
+    CONFIG_MALI_MTK_DEBUG_LOGBUF_EXCEPTION := y
+#    CONFIG_MALI_MTK_DEBUG_LOGBUF_CSFFW := y
+    CONFIG_MALI_MTK_MEM_TRACK := y
+    CONFIG_MALI_MTK_DEVFREQ := y
+    CONFIG_MALI_MTK_DEVFREQ_THERMAL := y
+    CONFIG_MALI_MTK_GPU_BM_2 := y
+    CONFIG_MALI_MTK_MFGSYS_PM := y
+    endif
+
+
     ifeq ($(MTK_PLATFORM_VERSION),mt6893)
     MTK_GPU_VERSION := $(LOCAL_MTK_GPU_VERSION)
     MTK_PLATFORM := $(MTK_PLATFORM_VERSION)
@@ -85,7 +108,6 @@ ifeq ($(BUILD_RULE),OOT)
     CONFIG_MALI_MTK_FENCE_DEBUG := y
     CONFIG_MALI_MTK_MFGSYS_PM := y
     endif
-endif
 
 # make $(src) as absolute path if it is not already, by prefixing $(srctree)
 # This is to prevent any build issue due to wrong path.
