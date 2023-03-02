@@ -17,6 +17,7 @@ endif
 
 ifneq ($(word 3,$(MTK_GPU_VERSION)),)
     obj-y += mali-$(word 3,$(MTK_GPU_VERSION))/drivers/gpu/arm/midgard/
+    obj-y += mali-$(word 3,$(MTK_GPU_VERSION))/drivers/base/arm/
 else
     obj-y += mali-EAC/drivers/
 endif

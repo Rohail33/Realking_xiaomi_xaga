@@ -120,3 +120,5 @@ config MTK_GPU_MT6983_SUPPORT
 	  Set Y or M to select this feature for specific platform-mt6983,
 	  and set N to disable.
 	  It is additional config to separate platforms.
+
+source "drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r32p1/drivers/base/arm/Kconfig"
