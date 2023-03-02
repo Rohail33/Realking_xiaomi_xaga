@@ -51,7 +51,7 @@ config MALI_MEMORY_GROUP_MANAGER
 
 config MALI_PROTECTED_MEMORY_ALLOCATOR
 	bool "Build Mali Protected Memory Allocator module"
-	depends on MALI_BASE_MODULES && MALI_CSF_SUPPORT
+	depends on MALI_BASE_MODULES
 	default y
 	help
 	  This option will build the protected memory allocator module.
