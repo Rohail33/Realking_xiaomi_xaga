@@ -44,6 +44,9 @@ void MTKGPUPower_model_destroy(void);
 void MTKGPUPower_model_sspm_enable(void);
 extern void (*mtk_ltr_gpu_pmu_start_fp)(unsigned int interval_ns);
 extern void (*mtk_ltr_gpu_pmu_stop_fp)(void);
+extern void (*mtk_swpm_gpu_pm_start_fp)(void);
+
+
 
 
 #endif

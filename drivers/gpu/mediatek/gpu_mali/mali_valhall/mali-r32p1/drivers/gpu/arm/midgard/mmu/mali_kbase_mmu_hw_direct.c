@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2014-2021 ARM Limited. All rights reserved.
@@ -26,6 +26,11 @@
 #include <tl/mali_kbase_tracepoints.h>
 #include <device/mali_kbase_device.h>
 
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+#include <mtk_gpufreq.h>
+#include "platform/mtk_platform_common.h"
+#endif
+
 /**
  * lock_region() - Generate lockaddr to lock memory region in MMU
  * @pfn:       Starting page frame number of the region to lock
@@ -35,47 +40,87 @@
  * The lockaddr value is a combination of the starting address and
  * the size of the region that encompasses all the memory pages to lock.
  *
- * The size is expressed as a logarithm: it is represented in a way
- * that is compatible with the HW specification and it also determines
- * how many of the lowest bits of the address are cleared.
+ * Bits 5:0 are used to represent the size, which must be a power of 2.
+ * The smallest amount of memory to be locked corresponds to 32 kB,
+ * i.e. 8 memory pages, because a MMU cache line is made of 64 bytes
+ * and every page table entry is 8 bytes. Therefore it is not possible
+ * to lock less than 8 memory pages at a time.
+ *
+ * The size is expressed as a logarithm minus one:
+ * - A value of 14 is thus interpreted as log(32 kB) = 15, where 32 kB
+ *   is the smallest possible size.
+ * - Likewise, a value of 47 is interpreted as log(256 TB) = 48, where 256 TB
+ *   is the largest possible size (implementation defined value according
+ *   to the HW spec).
+ *
+ * Bits 11:6 are reserved.
+ *
+ * Bits 63:12 are used to represent the base address of the region to lock.
+ * Only the upper bits of the address are used; lowest bits are cleared
+ * to avoid confusion.
+ *
+ * The address is aligned to a multiple of the region size. This has profound
+ * implications on the region size itself: often the MMU will lock a region
+ * larger than the given number of pages, because the lock region cannot start
+ * from any arbitrary address.
  *
  * Return: 0 if success, or an error code on failure.
  */
 static int lock_region(u64 pfn, u32 num_pages, u64 *lockaddr)
 {
 	const u64 lockaddr_base = pfn << PAGE_SHIFT;
-	u64 lockaddr_size_log2, region_frame_number_start,
-		region_frame_number_end;
+	const u64 lockaddr_end = ((pfn + num_pages) << PAGE_SHIFT) - 1;
+	u64 lockaddr_size_log2;
 
 	if (num_pages == 0)
 		return -EINVAL;
 
-	/* The size is expressed as a logarithm and should take into account
-	 * the possibility that some pages might spill into the next region.
+	/* The MMU lock region is a self-aligned region whose size
+	 * is a power of 2 and that contains both start and end
+	 * of the address range determined by pfn and num_pages.
+	 * The size of the MMU lock region can be defined as the
+	 * largest divisor that yields the same result when both
+	 * start and end addresses are divided by it.
+	 *
+	 * For instance: pfn=0x4F000 num_pages=2 describe the
+	 * address range between 0x4F000 and 0x50FFF. It is only
+	 * 2 memory pages. However there isn't a single lock region
+	 * of 8 kB that encompasses both addresses because 0x4F000
+	 * would fall into the [0x4E000, 0x4FFFF] region while
+	 * 0x50000 would fall into the [0x50000, 0x51FFF] region.
+	 * The minimum lock region size that includes the entire
+	 * address range is 128 kB, and the region would be
+	 * [0x40000, 0x5FFFF].
+	 *
+	 * The region size can be found by comparing the desired
+	 * start and end addresses and finding the highest bit
+	 * that differs. The smallest naturally aligned region
+	 * must include this bit change, hence the desired region
+	 * starts with this bit (and subsequent bits) set to 0
+	 * and ends with the bit (and subsequent bits) set to 1.
+	 *
+	 * In the example above: 0x4F000 ^ 0x50FFF = 0x1FFFF
+	 * therefore the highest bit that differs is bit #16
+	 * and the region size (as a logarithm) is 16 + 1 = 17, i.e. 128 kB.
 	 */
-	lockaddr_size_log2 = fls(num_pages) + PAGE_SHIFT - 1;
+	lockaddr_size_log2 = fls(lockaddr_base ^ lockaddr_end);
 
-	/* Round up if the number of pages is not a power of 2. */
-	if (num_pages != ((u32)1 << (lockaddr_size_log2 - PAGE_SHIFT)))
-		lockaddr_size_log2 += 1;
-
-	/* Round up if some memory pages spill into the next region. */
-	region_frame_number_start = pfn >> (lockaddr_size_log2 - PAGE_SHIFT);
-	region_frame_number_end =
-	    (pfn + num_pages - 1) >> (lockaddr_size_log2 - PAGE_SHIFT);
-
-	if (region_frame_number_start < region_frame_number_end)
-		lockaddr_size_log2 += 1;
-
-	/* Represent the size according to the HW specification. */
-	lockaddr_size_log2 = MAX(lockaddr_size_log2,
-		KBASE_LOCK_REGION_MIN_SIZE_LOG2);
-
+	/* Cap the size against minimum and maximum values allowed. */
 	if (lockaddr_size_log2 > KBASE_LOCK_REGION_MAX_SIZE_LOG2)
 		return -EINVAL;
 
-	/* The lowest bits are cleared and then set to size - 1 to represent
-	 * the size in a way that is compatible with the HW specification.
+	lockaddr_size_log2 =
+		MAX(lockaddr_size_log2, KBASE_LOCK_REGION_MIN_SIZE_LOG2);
+
+	/* Represent the result in a way that is compatible with HW spec.
+	 *
+	 * Upper bits are used for the base address, whose lower bits
+	 * are cleared to avoid confusion because they are going to be ignored
+	 * by the MMU anyway, since lock regions shall be aligned with
+	 * a multiple of their size and cannot start from any address.
+	 *
+	 * Lower bits are used for the size, which is represented as
+	 * logarithm minus one of the actual size.
 	 */
 	*lockaddr = lockaddr_base & ~((1ull << lockaddr_size_log2) - 1);
 	*lockaddr |= lockaddr_size_log2 - 1;
@@ -95,10 +140,29 @@ static int wait_ready(struct kbase_device *kbdev,
 	while (--max_loops && (val & AS_STATUS_AS_ACTIVE))
 		val = kbase_reg_read(kbdev, MMU_AS_REG(as_nr, AS_STATUS));
 
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
 	if (max_loops == 0) {
-		dev_err(kbdev->dev, "AS_ACTIVE bit stuck, might be caused by slow/unstable GPU clock or possible faulty FPGA connector\n");
+		dev_info(kbdev->dev,
+			"AS_ACTIVE bit stuck for as %u, might be caused by slow/unstable GPU clock or possible faulty FPGA connector",
+			as_nr);
+		if (!mtk_common_gpufreq_bringup()) {
+			mtk_common_debug_dump();
+#if defined(CONFIG_MTK_GPUFREQ_V2)
+			gpufreq_dump_infra_status();
+#else
+			mt_gpufreq_dump_infra_status();
+#endif /* CONFIG_MTK_GPUFREQ_V2 */
+		}
 		return -1;
 	}
+#else
+	if (WARN_ON_ONCE(max_loops == 0)) {
+		dev_info(kbdev->dev,
+			"AS_ACTIVE bit stuck for as %u, might be caused by slow/unstable GPU clock or possible faulty FPGA connector",
+			as_nr);
+		return -1;
+	}
+#endif
 
 	/* If waiting in loop was performed, log last read value. */
 	if (KBASE_AS_INACTIVE_MAX_LOOPS - 1 > max_loops)
@@ -115,6 +179,11 @@ static int write_cmd(struct kbase_device *kbdev, int as_nr, u32 cmd)
 	status = wait_ready(kbdev, as_nr);
 	if (status == 0)
 		kbase_reg_write(kbdev, MMU_AS_REG(as_nr, AS_COMMAND), cmd);
+	else {
+		dev_info(kbdev->dev,
+			"Wait for AS_ACTIVE bit failed for as %u, before sending MMU command %u",
+			as_nr, cmd);
+	}
 
 	return status;
 }
@@ -123,6 +192,9 @@ void kbase_mmu_hw_configure(struct kbase_device *kbdev, struct kbase_as *as)
 {
 	struct kbase_mmu_setup *current_setup = &as->current_setup;
 	u64 transcfg = 0;
+
+	lockdep_assert_held(&kbdev->hwaccess_lock);
+	lockdep_assert_held(&kbdev->mmu_hw_mutex);
 
 	transcfg = current_setup->transcfg;
 
@@ -167,6 +239,10 @@ void kbase_mmu_hw_configure(struct kbase_device *kbdev, struct kbase_as *as)
 			transcfg);
 
 	write_cmd(kbdev, as->number, AS_COMMAND_UPDATE);
+#if MALI_USE_CSF
+	/* Wait for UPDATE command to complete */
+	wait_ready(kbdev, as->number);
+#endif
 }
 
 int kbase_mmu_hw_do_operation(struct kbase_device *kbdev, struct kbase_as *as,
@@ -179,7 +255,10 @@ int kbase_mmu_hw_do_operation(struct kbase_device *kbdev, struct kbase_as *as,
 
 	if (op == AS_COMMAND_UNLOCK) {
 		/* Unlock doesn't require a lock first */
-		ret = write_cmd(kbdev, as->number, AS_COMMAND_UNLOCK);
+		write_cmd(kbdev, as->number, AS_COMMAND_UNLOCK);
+
+		/* Wait for UNLOCK command to complete */
+		ret = wait_ready(kbdev, as->number);
 	} else {
 		u64 lock_addr;
 

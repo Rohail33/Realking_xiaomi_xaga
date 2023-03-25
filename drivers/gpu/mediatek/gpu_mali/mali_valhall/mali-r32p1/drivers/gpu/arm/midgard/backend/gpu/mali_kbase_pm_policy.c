@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2010-2021 ARM Limited. All rights reserved.
@@ -284,7 +284,7 @@ static int policy_change_wait_for_L2_off(struct kbase_device *kbdev)
 		err = (int)remaining;
 	}
 
-	dev_dbg(kbdev->dev, "%s: err=%d mcu_state=%d, L2_state=%d\n", __func__,
+	dev_vdbg(kbdev->dev, "%s: err=%d mcu_state=%d, L2_state=%d\n", __func__,
 		err, kbdev->pm.backend.mcu_state, kbdev->pm.backend.l2_state);
 
 	return err;
@@ -300,6 +300,8 @@ void kbase_pm_set_policy(struct kbase_device *kbdev,
 	unsigned int new_policy_csf_pm_sched_flags;
 	bool sched_suspend;
 	bool reset_gpu = false;
+	bool reset_op_prevented = true;
+	struct kbase_csf_scheduler *scheduler = &kbdev->csf.scheduler;
 #endif
 
 	KBASE_DEBUG_ASSERT(kbdev != NULL);
@@ -311,6 +313,18 @@ void kbase_pm_set_policy(struct kbase_device *kbdev,
 	/* Serialize calls on kbase_pm_set_policy() */
 	mutex_lock(&kbdev->pm.backend.policy_change_lock);
 
+	if (kbase_reset_gpu_prevent_and_wait(kbdev)) {
+		dev_warn(kbdev->dev,
+			 "Set PM policy failing to prevent gpu reset.\n");
+		reset_op_prevented = false;
+	}
+
+	/* In case of CSF, the scheduler may be invoked to suspend. In that
+	 * case, there is a risk that the L2 may be turned on by the time we
+	 * check it here. So we hold the scheduler lock to avoid other operations
+	 * interfering with the policy change and vice versa.
+	 */
+	mutex_lock(&scheduler->lock);
 	spin_lock_irqsave(&kbdev->hwaccess_lock, flags);
 	/* policy_change_clamp_state_to_off, when needed, is set/cleared in
 	 * this function, a very limited temporal scope for covering the
@@ -323,7 +337,7 @@ void kbase_pm_set_policy(struct kbase_device *kbdev,
 	 * the always_on policy, reflected by the CSF_DYNAMIC_PM_CORE_KEEP_ON
 	 * flag bit.
 	 */
-	sched_suspend = kbdev->csf.firmware_inited &&
+	sched_suspend = kbdev->csf.firmware_inited && reset_op_prevented &&
 			(CSF_DYNAMIC_PM_CORE_KEEP_ON &
 			 (new_policy_csf_pm_sched_flags |
 			  kbdev->pm.backend.csf_pm_sched_flags));
@@ -331,7 +345,7 @@ void kbase_pm_set_policy(struct kbase_device *kbdev,
 	spin_unlock_irqrestore(&kbdev->hwaccess_lock, flags);
 
 	if (sched_suspend)
-		kbase_csf_scheduler_pm_suspend(kbdev);
+		kbase_csf_scheduler_pm_suspend_no_lock(kbdev);
 
 	spin_lock_irqsave(&kbdev->hwaccess_lock, flags);
 	/* If the current active policy is always_on, one needs to clamp the
@@ -399,13 +413,19 @@ void kbase_pm_set_policy(struct kbase_device *kbdev,
 
 #if MALI_USE_CSF
 	/* Reverse the suspension done */
+	if (sched_suspend && !reset_gpu)
+		kbase_csf_scheduler_pm_resume_no_lock(kbdev);
+	mutex_unlock(&scheduler->lock);
+
+	if (reset_op_prevented)
+		kbase_reset_gpu_allow(kbdev);
+
 	if (reset_gpu) {
 		dev_warn(kbdev->dev, "Resorting to GPU reset for policy change\n");
 		if (kbase_prepare_to_reset_gpu(kbdev, RESET_FLAGS_NONE))
 			kbase_reset_gpu(kbdev);
 		kbase_reset_gpu_wait(kbdev);
-	} else if (sched_suspend)
-		kbase_csf_scheduler_pm_resume(kbdev);
+	}
 
 	mutex_unlock(&kbdev->pm.backend.policy_change_lock);
 #endif

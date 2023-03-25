@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2015-2021 ARM Limited. All rights reserved.
@@ -78,7 +78,7 @@ static int pm_callback_power_on(struct kbase_device *kbdev)
 	int ret = 1; /* Assume GPU has been powered off */
 	int error;
 
-	dev_dbg(kbdev->dev, "pm_callback_power_on %p\n",
+	dev_vdbg(kbdev->dev, "pm_callback_power_on %p\n",
 			(void *)kbdev->dev->pm_domain);
 
 	enable_gpu_power_control(kbdev);
@@ -92,14 +92,14 @@ static int pm_callback_power_on(struct kbase_device *kbdev)
 		ret = 0;
 	}
 
-	dev_dbg(kbdev->dev, "pm_runtime_get_sync returned %d\n", error);
+	dev_vdbg(kbdev->dev, "pm_runtime_get_sync returned %d\n", error);
 
 	return ret;
 }
 
 static void pm_callback_power_off(struct kbase_device *kbdev)
 {
-	dev_dbg(kbdev->dev, "pm_callback_power_off\n");
+	dev_vdbg(kbdev->dev, "pm_callback_power_off\n");
 
 	pm_runtime_mark_last_busy(kbdev->dev);
 	pm_runtime_put_autosuspend(kbdev->dev);
@@ -114,7 +114,7 @@ static int kbase_device_runtime_init(struct kbase_device *kbdev)
 {
 	int ret = 0;
 
-	dev_dbg(kbdev->dev, "kbase_device_runtime_init\n");
+	dev_vdbg(kbdev->dev, "kbase_device_runtime_init\n");
 
 	pm_runtime_set_autosuspend_delay(kbdev->dev, AUTO_SUSPEND_DELAY);
 	pm_runtime_use_autosuspend(kbdev->dev);
@@ -132,14 +132,14 @@ static int kbase_device_runtime_init(struct kbase_device *kbdev)
 
 static void kbase_device_runtime_disable(struct kbase_device *kbdev)
 {
-	dev_dbg(kbdev->dev, "kbase_device_runtime_disable\n");
+	dev_vdbg(kbdev->dev, "kbase_device_runtime_disable\n");
 	pm_runtime_disable(kbdev->dev);
 }
 #endif
 
 static int pm_callback_runtime_on(struct kbase_device *kbdev)
 {
-	dev_dbg(kbdev->dev, "pm_callback_runtime_on\n");
+	dev_vdbg(kbdev->dev, "pm_callback_runtime_on\n");
 
 	enable_gpu_power_control(kbdev);
 	return 0;
@@ -147,7 +147,7 @@ static int pm_callback_runtime_on(struct kbase_device *kbdev)
 
 static void pm_callback_runtime_off(struct kbase_device *kbdev)
 {
-	dev_dbg(kbdev->dev, "pm_callback_runtime_off\n");
+	dev_vdbg(kbdev->dev, "pm_callback_runtime_off\n");
 
 	disable_gpu_power_control(kbdev);
 }

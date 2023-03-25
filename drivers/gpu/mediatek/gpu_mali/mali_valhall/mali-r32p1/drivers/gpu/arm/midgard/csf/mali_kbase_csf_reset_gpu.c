@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2019-2021 ARM Limited. All rights reserved.
@@ -29,6 +29,11 @@
 #include <csf/mali_kbase_csf_trace_buffer.h>
 #include <csf/ipa_control/mali_kbase_csf_ipa_control.h>
 #include <mali_kbase_reset_gpu.h>
+
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+#include <mtk_gpufreq.h>
+#include "platform/mtk_platform_common.h"
+#endif
 
 /* Waiting timeout for GPU reset to complete */
 #define GPU_RESET_TIMEOUT_MS (5000) /* 5 seconds */
@@ -267,7 +272,7 @@ static void kbase_csf_dump_firmware_trace_buffer(struct kbase_device *kbdev)
 		kbase_csf_firmware_get_trace_buffer(kbdev, FW_TRACE_BUF_NAME);
 
 	if (tb == NULL) {
-		dev_dbg(kbdev->dev, "Can't get the trace buffer, firmware trace dump skipped");
+		dev_vdbg(kbdev->dev, "Can't get the trace buffer, firmware trace dump skipped");
 		return;
 	}
 
@@ -360,7 +365,7 @@ static int kbase_csf_reset_gpu_now(struct kbase_device *kbdev,
 		kbase_csf_scheduler_reset(kbdev);
 	cancel_work_sync(&kbdev->csf.firmware_reload_work);
 
-	dev_dbg(kbdev->dev, "Disable GPU hardware counters.\n");
+	dev_vdbg(kbdev->dev, "Disable GPU hardware counters.\n");
 	/* This call will block until counters are disabled.
 	 */
 	kbase_hwcnt_context_disable(kbdev->hwcnt_gpu_ctx);
@@ -369,7 +374,7 @@ static int kbase_csf_reset_gpu_now(struct kbase_device *kbdev,
 	spin_lock(&kbdev->mmu_mask_change);
 	kbase_pm_reset_start_locked(kbdev);
 
-	dev_dbg(kbdev->dev,
+	dev_vdbg(kbdev->dev,
 		"We're about to flush out the IRQs and their bottom halves\n");
 	kbdev->irq_reset_flush = true;
 
@@ -381,15 +386,15 @@ static int kbase_csf_reset_gpu_now(struct kbase_device *kbdev,
 	spin_unlock(&kbdev->mmu_mask_change);
 	spin_unlock_irqrestore(&kbdev->hwaccess_lock, flags);
 
-	dev_dbg(kbdev->dev, "Ensure that any IRQ handlers have finished\n");
+	dev_vdbg(kbdev->dev, "Ensure that any IRQ handlers have finished\n");
 	/* Must be done without any locks IRQ handlers will take.
 	 */
 	kbase_synchronize_irqs(kbdev);
 
-	dev_dbg(kbdev->dev, "Flush out any in-flight work items\n");
+	dev_vdbg(kbdev->dev, "Flush out any in-flight work items\n");
 	kbase_flush_mmu_wqs(kbdev);
 
-	dev_dbg(kbdev->dev,
+	dev_vdbg(kbdev->dev,
 		"The flush has completed so reset the active indicator\n");
 	kbdev->irq_reset_flush = false;
 
@@ -425,6 +430,12 @@ static int kbase_csf_reset_gpu_now(struct kbase_device *kbdev,
 
 	if (WARN_ON(err)) {
 		kbase_csf_hwcnt_on_reset_error(kbdev);
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+		if (!mtk_common_gpufreq_bringup()) {
+			gpufreq_dump_infra_status();
+			mtk_common_debug_dump();
+		}
+#endif
 		return err;
 	}
 
@@ -445,6 +456,12 @@ static int kbase_csf_reset_gpu_now(struct kbase_device *kbdev,
 
 	if (WARN_ON(err)) {
 		kbase_csf_hwcnt_on_reset_error(kbdev);
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+		if (!mtk_common_gpufreq_bringup()) {
+			gpufreq_dump_infra_status();
+			mtk_common_debug_dump();
+		}
+#endif
 		return err;
 	}
 
@@ -453,8 +470,12 @@ static int kbase_csf_reset_gpu_now(struct kbase_device *kbdev,
 	kbase_hwcnt_context_enable(kbdev->hwcnt_gpu_ctx);
 	kbase_csf_scheduler_spin_unlock(kbdev, flags);
 
-	if (!silent)
+	if (!silent) {
 		dev_err(kbdev->dev, "Reset complete");
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+		ged_log_buf_print2(kbdev->ged_log_buf_hnd_kbase, GED_LOG_ATTR_TIME, "Reset complete");
+#endif
+	}
 
 	return 0;
 }
@@ -570,6 +591,14 @@ bool kbase_reset_gpu_is_active(struct kbase_device *kbdev)
 	 * complete
 	 */
 	return kbase_csf_reset_state_is_active(reset_state);
+}
+
+bool kbase_reset_gpu_is_not_pending(struct kbase_device *kbdev)
+{
+	enum kbase_csf_reset_gpu_state reset_state =
+		atomic_read(&kbdev->csf.reset.state);
+
+	return (reset_state != KBASE_CSF_RESET_GPU_NOT_PENDING);
 }
 
 int kbase_reset_gpu_wait(struct kbase_device *kbdev)

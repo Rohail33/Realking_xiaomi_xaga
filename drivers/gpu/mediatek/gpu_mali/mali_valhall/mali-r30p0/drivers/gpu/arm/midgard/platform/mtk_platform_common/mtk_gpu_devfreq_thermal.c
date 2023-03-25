@@ -12,10 +12,12 @@ unsigned long mtk_common_get_static_power(struct devfreq *df,
                                           unsigned long voltage /* mV */)
 {
 #if defined(CONFIG_MTK_GPUFREQ_V2)
-	return gpufreq_get_leakage_power(TARGET_DEFAULT, voltage * 100);
+	return mtk_common_gpufreq_bringup() ?
+		0 : gpufreq_get_leakage_power(TARGET_DEFAULT, voltage * 100);
 #else
 	(void)(voltage);
-	return mt_gpufreq_get_leakage_mw();
+	return mtk_common_gpufreq_bringup() ?
+		0 : mt_gpufreq_get_leakage_mw();
 #endif /* CONFIG_MTK_GPUFREQ_V2 */
 }
 
@@ -24,10 +26,12 @@ unsigned long mtk_common_get_dynamic_power(struct devfreq *df,
                                            unsigned long voltage /* mV */)
 {
 #if defined(CONFIG_MTK_GPUFREQ_V2)
-	return gpufreq_get_dynamic_power(TARGET_DEFAULT,
+	return mtk_common_gpufreq_bringup() ?
+		0 : gpufreq_get_dynamic_power(TARGET_DEFAULT,
 		freq / 1000, voltage * 100);
 #else
-	return mt_gpufreq_get_dyn_power(freq / 1000, voltage * 100);
+	return mtk_common_gpufreq_bringup() ?
+		0 : mt_gpufreq_get_dyn_power(freq / 1000, voltage * 100);
 #endif /* CONFIG_MTK_GPUFREQ_V2 */
 }
 

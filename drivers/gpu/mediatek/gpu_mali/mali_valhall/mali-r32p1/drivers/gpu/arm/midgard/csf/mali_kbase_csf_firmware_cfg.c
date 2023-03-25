@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2020-2021 ARM Limited. All rights reserved.
@@ -301,7 +301,7 @@ int kbase_csf_firmware_cfg_option_entry_parse(struct kbase_device *kbdev,
 
 	list_add(&config->node, &kbdev->csf.firmware_config);
 
-	dev_dbg(kbdev->dev, "Configuration option '%s' at 0x%x range %u-%u",
+	dev_vdbg(kbdev->dev, "Configuration option '%s' at 0x%x range %u-%u",
 			config->name, config->address,
 			config->min, config->max);
 

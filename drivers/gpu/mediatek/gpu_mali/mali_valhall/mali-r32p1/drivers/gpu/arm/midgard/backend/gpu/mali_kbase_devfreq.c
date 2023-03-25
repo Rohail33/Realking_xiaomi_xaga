@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2014-2021 ARM Limited. All rights reserved.
@@ -257,8 +257,19 @@ kbase_devfreq_status(struct device *dev, struct devfreq_dev_status *stat)
 
 	kbase_pm_get_dvfs_metrics(kbdev, &kbdev->last_devfreq_metrics, &diff);
 
+#if MALI_USE_CSF
+#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && \
+	IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
+	stat->busy_time = diff.time_busy[0];
+	stat->total_time = diff.time_busy[0] + diff.time_idle[0];
+#else
 	stat->busy_time = diff.time_busy;
 	stat->total_time = diff.time_busy + diff.time_idle;
+#endif
+#else //MALI_USE_CSF
+	stat->busy_time = diff.time_busy;
+	stat->total_time = diff.time_busy + diff.time_idle;
+#endif
 	stat->current_frequency = kbdev->current_nominal_freq;
 	stat->private_data = NULL;
 
@@ -561,7 +572,7 @@ static void kbase_devfreq_suspend_resume_worker(struct work_struct *work)
 	spin_unlock_irqrestore(&kbdev->hwaccess_lock, flags);
 
 	acted_type = kbdev->devfreq_queue.acted_type;
-	dev_dbg(kbdev->dev, "Worker handles queued req: %s (acted: %s)\n",
+	dev_vdbg(kbdev->dev, "Worker handles queued req: %s (acted: %s)\n",
 		kbase_devfreq_req_type_name(type),
 		kbase_devfreq_req_type_name(acted_type));
 	switch (type) {
@@ -572,7 +583,7 @@ static void kbase_devfreq_suspend_resume_worker(struct work_struct *work)
 				devfreq_resume_device(kbdev->devfreq);
 			else
 				devfreq_suspend_device(kbdev->devfreq);
-			dev_dbg(kbdev->dev, "Devfreq transition occured: %s => %s\n",
+			dev_vdbg(kbdev->dev, "Devfreq transition occured: %s => %s\n",
 				kbase_devfreq_req_type_name(acted_type),
 				kbase_devfreq_req_type_name(type));
 			kbdev->devfreq_queue.acted_type = type;
@@ -597,7 +608,7 @@ void kbase_devfreq_enqueue_work(struct kbase_device *kbdev,
 			   &kbdev->devfreq_queue.work);
 	}
 	spin_unlock_irqrestore(&kbdev->hwaccess_lock, flags);
-	dev_dbg(kbdev->dev, "Enqueuing devfreq req: %s\n",
+	dev_vdbg(kbdev->dev, "Enqueuing devfreq req: %s\n",
 		kbase_devfreq_req_type_name(work_type));
 }
 
@@ -771,7 +782,7 @@ void kbase_devfreq_term(struct kbase_device *kbdev)
 {
 	int err;
 
-	dev_dbg(kbdev->dev, "Term Mali devfreq\n");
+	dev_vdbg(kbdev->dev, "Term Mali devfreq\n");
 
 #if IS_ENABLED(CONFIG_DEVFREQ_THERMAL)
 	if (kbdev->devfreq_cooling)

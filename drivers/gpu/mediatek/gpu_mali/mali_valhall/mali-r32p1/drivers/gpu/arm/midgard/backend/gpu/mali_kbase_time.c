@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2014-2016, 2018-2021 ARM Limited. All rights reserved.
@@ -23,7 +23,10 @@
 #include <mali_kbase_hwaccess_time.h>
 #include <device/mali_kbase_device.h>
 #include <backend/gpu/mali_kbase_pm_internal.h>
-#include <asm/arch_timer.h>
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+#include <mtk_gpufreq.h>
+#include "platform/mtk_platform_common.h"
+#endif
 
 void kbase_backend_get_gpu_time_norequest(struct kbase_device *kbdev,
 					  u64 *cycle_counter,
@@ -32,20 +35,9 @@ void kbase_backend_get_gpu_time_norequest(struct kbase_device *kbdev,
 {
 	u32 hi1, hi2;
 
-	if (cycle_counter) {
-		/* Read hi, lo, hi to ensure a coherent u64 */
-		do {
-			hi1 = kbase_reg_read(kbdev,
-					     GPU_CONTROL_REG(CYCLE_COUNT_HI));
-			*cycle_counter = kbase_reg_read(kbdev,
-					     GPU_CONTROL_REG(CYCLE_COUNT_LO));
-			hi2 = kbase_reg_read(kbdev,
-					     GPU_CONTROL_REG(CYCLE_COUNT_HI));
-		} while (hi1 != hi2);
-		*cycle_counter |= (((u64) hi1) << 32);
-	}
+	if (cycle_counter)
+		*cycle_counter = kbase_backend_get_cycle_cnt(kbdev);
 
-#if 0
 	if (system_time) {
 		/* Read hi, lo, hi to ensure a coherent u64 */
 		do {
@@ -58,15 +50,6 @@ void kbase_backend_get_gpu_time_norequest(struct kbase_device *kbdev,
 		} while (hi1 != hi2);
 		*system_time |= (((u64) hi1) << 32);
 	}
-#endif
-
-	/*
-	 * MTK : Due to a mistake by DE, TIMESTAMP will be reset after powering down the MFG.
-	 * Therefore, we need to get system_time from CNTVCT instead of TIMESTAMP.
-	 * Note: TIMESTAMP is 26MHz, CNTVCT is 13MHz
-	 */
-	if (system_time)
-		*system_time = __arch_counter_get_cntvct() * 2;
 
 	/* Record the CPU's idea of current time */
 	if (ts != NULL)
@@ -117,4 +100,24 @@ void kbase_backend_get_gpu_time(struct kbase_device *kbdev, u64 *cycle_counter,
 #if !MALI_USE_CSF
 	kbase_pm_release_gpu_cycle_counter(kbdev);
 #endif
+}
+
+u64 kbase_backend_get_cycle_cnt(struct kbase_device *kbdev)
+{
+	u32 hi1, hi2, lo;
+
+	if (!kbdev->pm.backend.gpu_powered)
+		return 0;
+
+	/* Read hi, lo, hi to ensure a coherent u64 */
+	do {
+		hi1 = kbase_reg_read(kbdev,
+					GPU_CONTROL_REG(CYCLE_COUNT_HI));
+		lo = kbase_reg_read(kbdev,
+					GPU_CONTROL_REG(CYCLE_COUNT_LO));
+		hi2 = kbase_reg_read(kbdev,
+					GPU_CONTROL_REG(CYCLE_COUNT_HI));
+	} while (hi1 != hi2);
+
+	return lo | (((u64) hi1) << 32);
 }

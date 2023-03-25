@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  *
  * (C) COPYRIGHT 2018-2021 ARM Limited. All rights reserved.
@@ -39,9 +39,14 @@
  */
 #define KBASEP_USER_DB_NR_INVALID ((s8)-1)
 
-#define FIRMWARE_PING_INTERVAL_MS (4000) /* 4 seconds */
+/* Indicates an invalid value for the scan out sequence number, used to
+* signify there is no group that has protected mode execution pending.
+*/
+#define KBASEP_TICK_PROTM_PEND_SCAN_SEQ_NR_INVALID (U32_MAX)
 
-#define FIRMWARE_IDLE_HYSTERESIS_TIME_MS (10) /* Default 10 milliseconds */
+#define FIRMWARE_PING_INTERVAL_MS (15000) /* 15 seconds */
+
+#define FIRMWARE_IDLE_HYSTERESIS_TIME_MS (5) /* Default 10 milliseconds */
 
 /**
  * enum kbase_csf_event_callback_action - return type for CSF event callbacks.
@@ -276,7 +281,7 @@ int kbase_csf_queue_bind(struct kbase_context *kctx,
  *
  * @queue:	Pointer to queue to be unbound.
  */
-void kbase_csf_queue_unbind(struct kbase_queue *queue);
+void kbase_csf_queue_unbind(struct kbase_queue *queue, bool process_exit);
 
 /**
  * kbase_csf_queue_unbind_stopped - Unbind a GPU command queue in the case
@@ -559,6 +564,5 @@ static inline u8 kbase_csf_priority_queue_group_priority_to_relative(u8 priority
 		priority = BASE_QUEUE_GROUP_PRIORITY_LOW;
 	return kbasep_csf_queue_group_priority_to_relative[priority];
 }
-
 
 #endif /* _KBASE_CSF_H_ */

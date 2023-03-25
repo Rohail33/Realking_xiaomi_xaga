@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2012-2017, 2019-2021 ARM Limited. All rights reserved.
@@ -78,7 +78,7 @@ int kbasep_mem_profile_debugfs_insert(struct kbase_context *kctx, char *data,
 
 	mutex_lock(&kctx->mem_profile_lock);
 
-	dev_dbg(kctx->kbdev->dev, "initialised: %d",
+	dev_vdbg(kctx->kbdev->dev, "initialised: %d",
 		kbase_ctx_flag(kctx, KCTX_MEM_PROFILE_INITIALIZED));
 
 	if (!kbase_ctx_flag(kctx, KCTX_MEM_PROFILE_INITIALIZED)) {
@@ -102,7 +102,7 @@ int kbasep_mem_profile_debugfs_insert(struct kbase_context *kctx, char *data,
 		kfree(data);
 	}
 
-	dev_dbg(kctx->kbdev->dev, "returning: %d, initialised: %d",
+	dev_vdbg(kctx->kbdev->dev, "returning: %d, initialised: %d",
 		err, kbase_ctx_flag(kctx, KCTX_MEM_PROFILE_INITIALIZED));
 
 	mutex_unlock(&kctx->mem_profile_lock);
@@ -114,7 +114,7 @@ void kbasep_mem_profile_debugfs_remove(struct kbase_context *kctx)
 {
 	mutex_lock(&kctx->mem_profile_lock);
 
-	dev_dbg(kctx->kbdev->dev, "initialised: %d",
+	dev_vdbg(kctx->kbdev->dev, "initialised: %d",
 				kbase_ctx_flag(kctx, KCTX_MEM_PROFILE_INITIALIZED));
 
 	kfree(kctx->mem_profile_data);

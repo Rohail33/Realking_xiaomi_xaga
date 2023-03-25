@@ -20,6 +20,8 @@
 #
 
 # *** MTK ***
+$(info *GPU [mtk-Kbuild] src = $(src))
+$(info *GPU [mtk-Kbuild] srctree = $(srctree))
 include $(src)/Kbuild-mtk-custom-env
 include $(src)/platform/mtk_platform_common/Kbuild
 ccflags-y += -I$(src)/include
@@ -34,6 +36,7 @@ MALI_RELEASE_NAME ?= "r30p0-00cet0"
 
 # make $(src) as absolute path if it isn't already, by prefixing $(srctree)
 src:=$(if $(patsubst /%,,$(src)),$(srctree)/$(src),$(src))
+$(info *GPU [mtk-Kbuild] src = $(src))
 KBASE_PATH = $(src)
 KBASE_PLATFORM_PATH = $(KBASE_PATH)/platform_dummy
 UMP_PATH = $(src)/../../../base
@@ -43,9 +46,7 @@ MALI_CUSTOMER_RELEASE ?= 1
 MALI_UNIT_TEST ?= 0
 MALI_KERNEL_TEST_API ?= 0
 MALI_COVERAGE ?= 0
-#CONFIG_MALI_PLATFORM_NAME ?= "devicetree"
-# *** MTK ***
-CONFIG_MALI_PLATFORM_NAME ?= $(CONFIG_MALI_PLATFORM_THIRDPARTY_NAME)
+CONFIG_MALI_PLATFORM_NAME ?= "devicetree"
 # Experimental features (corresponding -D definition should be appended to
 # DEFINES below, e.g. for MALI_EXPERIMENTAL_FEATURE,
 # -DMALI_EXPERIMENTAL_FEATURE=$(MALI_EXPERIMENTAL_FEATURE) should be appended)
@@ -186,11 +187,13 @@ ccflags-y += -I$(KBASE_PATH) -I$(KBASE_PATH)/debug \
 	-I$(KBASE_PATH)/debug/backend
 
 # Tell the Linux build system from which .o file to create the kernel module
+# LD1.0
 ifneq ($(CONFIG_MTK_GPU_VERSION),"")
 obj-$(CONFIG_MALI_MIDGARD) += mali_kbase.o
-else ifeq ($(MTK_PLATFORM),mt6893)
-obj-$(CONFIG_MALI_MIDGARD) += mali_kbase_mt6893.o
-mali_kbase_mt6893-y := mali_kbase.o
+# LD2.0
+else ifneq ($(wildcard $(src)/platform/$(MTK_PLATFORM)),)
+obj-$(CONFIG_MALI_MIDGARD) += mali_kbase_$(MTK_PLATFORM).o
+mali_kbase_$(MTK_PLATFORM)-y := mali_kbase.o
 endif
 
 # Tell the Linux build system to enable building of our .c files

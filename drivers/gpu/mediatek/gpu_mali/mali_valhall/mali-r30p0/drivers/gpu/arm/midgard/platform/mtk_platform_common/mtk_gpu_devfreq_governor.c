@@ -81,10 +81,22 @@ static int mtk_common_devfreq_target(struct device *dev,
 
 	freq_khz = *freq / 1000;
 
+	if (mtk_common_gpufreq_bringup())
+		return 0;
 #if defined(CONFIG_MTK_GPUFREQ_V2)
 	(void)(pow);
-	(void)(opp_idx);
-	gpufreq_set_limit(TARGET_DEFAULT, LIMIT_THERMAL_AP, freq_khz, GPUPPM_KEEP_IDX);
+	opp_idx = gpufreq_get_oppidx_by_freq(TARGET_DEFAULT, freq_khz);
+	if (opp_idx) {
+		gpufreq_set_limit(TARGET_DEFAULT, LIMIT_THERMAL,
+			opp_idx, GPUPPM_KEEP_IDX);
+		resume = 0;
+	} else {
+		if (!resume) {
+			gpufreq_set_limit(TARGET_DEFAULT, LIMIT_THERMAL,
+				GPUPPM_RESET_IDX, GPUPPM_KEEP_IDX);
+			resume = 1;
+		}
+	}
 
 	kbdev->current_nominal_freq =
 		gpufreq_get_cur_freq(TARGET_DEFAULT) * 1000; /* khz to hz*/

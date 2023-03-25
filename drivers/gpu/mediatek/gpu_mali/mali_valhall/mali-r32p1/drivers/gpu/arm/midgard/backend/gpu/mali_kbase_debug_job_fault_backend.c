@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2012-2015, 2018-2021 ARM Limited. All rights reserved.
@@ -137,7 +137,7 @@ bool kbase_debug_job_fault_reg_snapshot_init(struct kbase_context *kctx,
 	kctx->reg_dump[offset] = REGISTER_DUMP_TERMINATION_FLAG;
 	kctx->reg_dump[offset + 1] = REGISTER_DUMP_TERMINATION_FLAG;
 
-	dev_dbg(kctx->kbdev->dev, "kbase_job_fault_reg_snapshot_init:%d\n",
+	dev_vdbg(kctx->kbdev->dev, "kbase_job_fault_reg_snapshot_init:%d\n",
 			offset);
 
 	return true;

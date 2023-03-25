@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2021 ARM Limited. All rights reserved.
@@ -1237,6 +1237,7 @@ kbasep_hwcnt_backend_csf_create(struct kbase_hwcnt_backend_csf_info *csf_info,
 		&backend_csf->ring_buf_cpu_base, &backend_csf->ring_buf);
 	if (errcode)
 		goto err_ring_buf_alloc;
+	errcode = -ENOMEM;
 
 	/* Zero all performance enable header to prepare for first enable. */
 	kbasep_hwcnt_backend_csf_zero_all_prfcnt_en_header(backend_csf);
@@ -1797,8 +1798,10 @@ int kbase_hwcnt_backend_csf_metadata_init(
 	 * Dump abstraction size should be exactly the same size and layout as
 	 * the physical dump size, for backwards compatibility.
 	 */
+#if !IS_ENABLED(CONFIG_MALI_MTK_NO_THERMAL)
 	WARN_ON(csf_info->prfcnt_info.dump_bytes !=
 		csf_info->metadata->dump_buf_bytes);
+#endif
 
 	return 0;
 }
