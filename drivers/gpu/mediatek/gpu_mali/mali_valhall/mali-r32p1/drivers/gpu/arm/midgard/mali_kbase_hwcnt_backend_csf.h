@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  *
  * (C) COPYRIGHT 2021 ARM Limited. All rights reserved.
@@ -19,7 +19,7 @@
  *
  */
 
-/**
+/*
  * Concrete implementation of mali_kbase_hwcnt_backend interface for CSF
  * backend.
  */

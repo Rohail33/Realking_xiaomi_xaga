@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2020-2021 ARM Limited. All rights reserved.
@@ -131,7 +131,7 @@ static void kbasep_ktrace_dump_msg(struct kbase_device *kbdev,
 	lockdep_assert_held(&kbdev->ktrace.lock);
 
 	kbasep_ktrace_format_msg(trace_msg, buffer, sizeof(buffer));
-	dev_dbg(kbdev->dev, "%s", buffer);
+	dev_vdbg(kbdev->dev, "%s", buffer);
 }
 
 struct kbase_ktrace_msg *kbasep_ktrace_reserve(struct kbase_ktrace *ktrace)
@@ -220,7 +220,7 @@ void kbasep_ktrace_dump(struct kbase_device *kbdev)
 	char buffer[KTRACE_DUMP_MESSAGE_SIZE] = "Dumping trace:\n";
 
 	kbasep_ktrace_format_header(buffer, sizeof(buffer), strlen(buffer));
-	dev_dbg(kbdev->dev, "%s", buffer);
+	dev_vdbg(kbdev->dev, "%s", buffer);
 
 	spin_lock_irqsave(&kbdev->ktrace.lock, flags);
 	start = kbdev->ktrace.first_out;
@@ -233,7 +233,7 @@ void kbasep_ktrace_dump(struct kbase_device *kbdev)
 
 		start = (start + 1) & KBASE_KTRACE_MASK;
 	}
-	dev_dbg(kbdev->dev, "TRACE_END");
+	dev_vdbg(kbdev->dev, "TRACE_END");
 
 	kbasep_ktrace_clear_locked(kbdev);
 

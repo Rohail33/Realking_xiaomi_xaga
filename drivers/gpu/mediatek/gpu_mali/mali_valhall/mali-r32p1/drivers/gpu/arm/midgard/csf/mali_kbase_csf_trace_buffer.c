@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2018-2021 ARM Limited. All rights reserved.
@@ -139,7 +139,7 @@ int kbase_csf_firmware_trace_buffers_init(struct kbase_device *kbdev)
 	const u32 cache_line_alignment = kbase_get_cache_line_alignment(kbdev);
 
 	if (list_empty(&kbdev->csf.firmware_trace_buffers.list)) {
-		dev_dbg(kbdev->dev, "No trace buffers to initialise\n");
+		dev_vdbg(kbdev->dev, "No trace buffers to initialise\n");
 		return 0;
 	}
 
@@ -299,9 +299,9 @@ int kbase_csf_firmware_parse_trace_buffer_entry(struct kbase_device *kbdev,
 
 	if (i < ARRAY_SIZE(trace_buffer_data)) {
 		list_add(&trace_buffer->node, &kbdev->csf.firmware_trace_buffers.list);
-		dev_dbg(kbdev->dev, "Trace buffer '%s'", trace_buffer->name);
+		dev_vdbg(kbdev->dev, "Trace buffer '%s'", trace_buffer->name);
 	} else {
-		dev_dbg(kbdev->dev, "Unknown trace buffer '%s'", trace_buffer->name);
+		dev_vdbg(kbdev->dev, "Unknown trace buffer '%s'", trace_buffer->name);
 		kfree(trace_buffer);
 	}
 
@@ -598,7 +598,7 @@ static int kbase_csf_firmware_trace_enable_mask_write(void *data, u64 val)
 	enable_bits_count =
 	    kbase_csf_firmware_trace_buffer_get_trace_enable_bits_count(tb);
 	if (enable_bits_count > 64) {
-		dev_dbg(kbdev->dev, "Limit enabled bits count from %u to 64",
+		dev_vdbg(kbdev->dev, "Limit enabled bits count from %u to 64",
 			enable_bits_count);
 		enable_bits_count = 64;
 	}
@@ -616,7 +616,7 @@ static int kbasep_csf_firmware_trace_debugfs_open(struct inode *in,
 	struct kbase_device *kbdev = in->i_private;
 
 	file->private_data = kbdev;
-	dev_dbg(kbdev->dev, "Opened firmware trace buffer dump debugfs file");
+	dev_vdbg(kbdev->dev, "Opened firmware trace buffer dump debugfs file");
 
 	return 0;
 }

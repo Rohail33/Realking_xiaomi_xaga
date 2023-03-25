@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  *
  * (C) COPYRIGHT 2020-2021 ARM Limited. All rights reserved.
@@ -657,7 +657,7 @@ static inline bool kbasep_js_is_submit_allowed(
 	test_bit = (u16) (1u << kctx->as_nr);
 
 	is_allowed = (bool) (js_devdata->runpool_irq.submit_allowed & test_bit);
-	dev_dbg(kctx->kbdev->dev, "JS: submit %s allowed on %pK (as=%d)",
+	dev_vdbg(kctx->kbdev->dev, "JS: submit %s allowed on %pK (as=%d)",
 			is_allowed ? "is" : "isn't", (void *)kctx, kctx->as_nr);
 	return is_allowed;
 }
@@ -684,7 +684,7 @@ static inline void kbasep_js_set_submit_allowed(
 
 	set_bit = (u16) (1u << kctx->as_nr);
 
-	dev_dbg(kctx->kbdev->dev, "JS: Setting Submit Allowed on %pK (as=%d)",
+	dev_vdbg(kctx->kbdev->dev, "JS: Setting Submit Allowed on %pK (as=%d)",
 			kctx, kctx->as_nr);
 
 	js_devdata->runpool_irq.submit_allowed |= set_bit;
@@ -715,7 +715,7 @@ static inline void kbasep_js_clear_submit_allowed(
 	clear_bit = (u16) (1u << kctx->as_nr);
 	clear_mask = ~clear_bit;
 
-	dev_dbg(kctx->kbdev->dev, "JS: Clearing Submit Allowed on %pK (as=%d)",
+	dev_vdbg(kctx->kbdev->dev, "JS: Clearing Submit Allowed on %pK (as=%d)",
 			kctx, kctx->as_nr);
 
 	js_devdata->runpool_irq.submit_allowed &= clear_mask;

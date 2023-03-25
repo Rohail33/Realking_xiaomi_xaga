@@ -5,6 +5,8 @@
 
 #include <mali_kbase.h>
 #include <platform/mtk_platform_common.h>
+#include <backend/gpu/mali_kbase_pm_internal.h>
+#include <backend/gpu/mali_kbase_pm_defs.h>
 #include "governor.h"
 #include "mtk_gpu_devfreq_governor.h"
 #include <mtk_gpufreq.h>
@@ -71,7 +73,7 @@ static int mtk_common_devfreq_target(struct device *dev,
 	unsigned int pow = 0;
 	unsigned long freq_khz = 0;
 	static int resume;
-	struct kbase_device *kbdev = dev_get_drvdata(dev);
+	struct kbase_device *kbdev = (struct kbase_device *)mtk_common_get_kbdev();
 
 	/* Now only thermal throttle will limit opps in devfreq
 	 * So the request opp freq would reflect the valid pow
@@ -81,8 +83,11 @@ static int mtk_common_devfreq_target(struct device *dev,
 
 	freq_khz = *freq / 1000;
 
-	if (mtk_common_gpufreq_bringup())
+	if (mtk_common_gpufreq_bringup() || IS_ERR_OR_NULL(kbdev)) {
+		kbdev->current_nominal_freq = 0;
 		return 0;
+	}
+
 #if defined(CONFIG_MTK_GPUFREQ_V2)
 	(void)(pow);
 	(void)(opp_idx);
@@ -112,21 +117,54 @@ static int mtk_common_devfreq_target(struct device *dev,
 	return 0;
 }
 
+static int mtk_common_devfreq_get_cur_freq(struct device *dev, unsigned long *freq)
+{
+	struct kbase_device *kbdev = (struct kbase_device *)mtk_common_get_kbdev();
+
+	if (!IS_ERR_OR_NULL(kbdev)) {
+		*freq = kbdev->current_nominal_freq;
+	} else {
+		*freq = 0;
+	}
+
+	return 0;
+}
+
+static int
+mtk_common_devfreq_status(struct device *dev, struct devfreq_dev_status *stat)
+{
+	return 0;
+}
+
 void mtk_common_devfreq_update_profile(struct devfreq_dev_profile *dp)
 {
 	dp->polling_ms = 0;
 	dp->target = mtk_common_devfreq_target;
+	dp->get_dev_status = mtk_common_devfreq_status;
+	dp->get_cur_freq = mtk_common_devfreq_get_cur_freq;
+	dp->exit = NULL;
 }
 
 int mtk_common_devfreq_init(void)
 {
 	int ret = 0;
+	struct kbase_device *kbdev = (struct kbase_device *)mtk_common_get_kbdev();
 
 	ret = devfreq_add_governor(&mtk_common_gov_dummy);
-	if (ret) {
+	if (ret || IS_ERR_OR_NULL(kbdev)) {
 		pr_info("@%s: Failed to add governor '%s' (ret: %d)\n",
 		        __func__, mtk_common_gov_dummy.name, ret);
 		return ret;
+	}
+
+	if (mtk_common_gpufreq_bringup()) {
+		kbdev->current_nominal_freq = 0;
+	} else {
+#if defined(CONFIG_MTK_GPUFREQ_V2)
+		kbdev->current_nominal_freq = gpufreq_get_cur_freq(TARGET_DEFAULT) * 1000;
+#else
+		kbdev->current_nominal_freq = mt_gpufreq_get_freq_by_idx(mt_gpufreq_get_cur_freq_index()) * 1000;
+#endif /* CONFIG_MTK_GPUFREQ_V2 */
 	}
 
 	return ret;

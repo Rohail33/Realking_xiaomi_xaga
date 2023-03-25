@@ -1,20 +1,12 @@
-$(info mali MTK evironment, building r30p0 DDK)
+$(info *GPU [mtk-Kbuild] building r30p0 DDK ...)
 
 MTK_TOP = $(srctree)/drivers/misc/mediatek/
 
 # build support for a ARM Mali Midgard GPU
 CONFIG_MALI_MIDGARD := $(CONFIG_MTK_GPU_SUPPORT)
-$(info mtk-Kbuild CONFIG_MALI_MIDGARD := $(CONFIG_MALI_MIDGARD))
 
 # use mtk platform
-CONFIG_MALI_PLATFORM_THIRDPARTY := y
-CONFIG_MALI_PLATFORM_THIRDPARTY_NAME := $(MTK_PLATFORM)
-
-$(info mtk-Kbuild CONFIG_MALI_PLATFORM_THIRDPARTY := $(CONFIG_MALI_PLATFORM_THIRDPARTY))
-$(info mtk-Kbuild CONFIG_MALI_PLATFORM_THIRDPARTY_NAME := $(CONFIG_MALI_PLATFORM_THIRDPARTY_NAME))
-
-CONFIG_MALI_DEBUG := y
-CONFIG_MALI_DEVFREQ := y
+CONFIG_MALI_PLATFORM_NAME := $(MTK_PLATFORM)
 
 ccflags-y += -I$(srctree)/include
 ccflags-y += -I$(srctree)/drivers/staging/android
@@ -27,25 +19,47 @@ ccflags-y += -I$(srctree)/drivers/gpu/mediatek/ged/include
 ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_bm
 ccflags-y += -I$(srctree)/drivers/gpu/mediatek/mt-plat
 ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpufreq
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/backend/gpu
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/include
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/platform/$(MTK_PLATFORM)
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/platform/mtk_platform_common
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r30p0/drivers/gpu/arm/midgard/debug
+ccflags-y += -I$(src)/backend/gpu
+ccflags-y += -I$(src)/include
+ccflags-y += -I$(src)/platform/$(MTK_PLATFORM)
+ccflags-y += -I$(src)/platform/mtk_platform_common
+ccflags-y += -I$(src)/debug
 ccflags-y += -I$(srctree)/drivers/staging/android/ion
 ccflags-y += -I$(srctree)/drivers/iommu
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat
 
 ccflags-$(CONFIG_DEBUG_FS) += -DCONFIG_DEBUG_FS
-ccflags-y += -DCONFIG_PROC_FS
-
-ccflags-y += -DCONFIG_MALI_MIDGARD_DVFS
-ccflags-y += -DCONFIG_MALI_DEVFREQ
-#ccflags-y += -DCONFIG_MALI_MTK_IOMMU_V2
+ccflags-$(CONFIG_PROC_FS) += -DCONFIG_PROC_FS
 ccflags-$(CONFIG_MTK_GPU_COMMON_DVFS_SUPPORT) += -DCONFIG_MALI_MTK_DVFS_POLICY
 ccflags-$(CONFIG_MTK_GPU_COMMON_DVFS_SUPPORT) += -DCONFIG_MALI_MTK_DVFS_LOADING_MODE
-ccflags-y += -DCONFIG_MALI_MTK_DEBUG
-ccflags-y += -DCONFIG_MALI_MTK_DEBUG_DFD
-ccflags-y += -DCONFIG_MALI_MTK_MEM_TRACK
-ccflags-y += -DCONFIG_MALI_MTK_DEVFREQ
-ccflags-y += -DCONFIG_MALI_MTK_DEVFREQ_THERMAL
+ccflags-y += -DCONFIG_GPU_$(shell echo $(MTK_PLATFORM) | tr a-z A-Z)
+ccflags-$(CONFIG_MALI_MIDGARD_DVFS) += -DCONFIG_MALI_MIDGARD_DVFS
+ccflags-$(CONFIG_MALI_DEVFREQ) += -DCONFIG_MALI_DEVFREQ
+ccflags-$(CONFIG_MALI_MTK_DEBUG) += -DCONFIG_MALI_MTK_DEBUG
+ccflags-$(CONFIG_MALI_MTK_DEBUG_DFD) += -DCONFIG_MALI_MTK_DEBUG_DFD
+ccflags-$(CONFIG_MALI_MTK_MEM_TRACK) += -DCONFIG_MALI_MTK_MEM_TRACK
+ccflags-$(CONFIG_MALI_MTK_DEVFREQ) += -DCONFIG_MALI_MTK_DEVFREQ
+ccflags-$(CONFIG_MALI_MTK_DEVFREQ_THERMAL) += -DCONFIG_MALI_MTK_DEVFREQ_THERMAL
+
+# kernel config
+$(info *GPU [mtk-Kbuild] CONFIG_DEBUG_FS = $(CONFIG_DEBUG_FS))
+$(info *GPU [mtk-Kbuild] CONFIG_PROC_FS = $(CONFIG_PROC_FS))
+$(info *GPU [mtk-Kbuild] CONFIG_MTK_GPU_COMMON_DVFS_SUPPORT = $(CONFIG_MTK_GPU_COMMON_DVFS_SUPPORT))
+$(info *GPU [mtk-Kbuild] CONFIG_MTK_GPU_SUPPORT = $(CONFIG_MTK_GPU_SUPPORT))
+$(info *GPU [mtk-Kbuild] CONFIG_MTK_GPU_VERSION = $(CONFIG_MTK_GPU_VERSION))
+# platform config
+$(info *GPU [mtk-Kbuild] MTK_GPU_VERSION = $(MTK_GPU_VERSION))
+$(info *GPU [mtk-Kbuild] MTK_PLATFORM = $(MTK_PLATFORM))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_MIDGARD = $(CONFIG_MALI_MIDGARD))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_PLATFORM_NAME = $(CONFIG_MALI_PLATFORM_NAME))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_CSF_SUPPORT = $(CONFIG_MALI_CSF_SUPPORT))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_REAL_HW = $(CONFIG_MALI_REAL_HW))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_NO_MALI = $(CONFIG_MALI_NO_MALI))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_DEBUG = $(CONFIG_MALI_DEBUG))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_MIDGARD_DVFS = $(CONFIG_MALI_MIDGARD_DVFS))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_DEVFREQ = $(CONFIG_MALI_DEVFREQ))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_MTK_DEBUG = $(CONFIG_MALI_MTK_DEBUG))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_MTK_DEBUG_DFD = $(CONFIG_MALI_MTK_DEBUG_DFD))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_MTK_MEM_TRACK = $(CONFIG_MALI_MTK_MEM_TRACK))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_MTK_DEVFREQ = $(CONFIG_MALI_MTK_DEVFREQ))
+$(info *GPU [mtk-Kbuild] CONFIG_MALI_MTK_DEVFREQ_THERMAL = $(CONFIG_MALI_MTK_DEVFREQ_THERMAL))

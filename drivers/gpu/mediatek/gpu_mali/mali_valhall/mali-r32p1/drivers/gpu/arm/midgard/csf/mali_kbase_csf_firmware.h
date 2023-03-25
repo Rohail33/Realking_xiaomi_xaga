@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  *
  * (C) COPYRIGHT 2018-2021 ARM Limited. All rights reserved.
@@ -79,7 +79,7 @@
 #define MAX_SUPPORTED_STREAMS_PER_GROUP 32
 
 /* Waiting timeout for status change acknowledgment, in milliseconds */
-#define CSF_FIRMWARE_TIMEOUT_MS (3000) /* Relaxed to 3000ms from 800ms due to Android */
+#define CSF_FIRMWARE_TIMEOUT_MS (12000) /* Relaxed to 12000ms from 800ms due to Android */
 
 struct kbase_device;
 
@@ -442,12 +442,26 @@ int kbase_csf_firmware_set_timeout(struct kbase_device *kbdev, u64 timeout);
 
 /**
  * kbase_csf_enter_protected_mode - Send the Global request to firmware to
- *                                  enter protected mode and wait for its
- *                                  completion.
+ *                                  enter protected mode.
  *
  * @kbdev: Instance of a GPU platform device that implements a CSF interface.
+ *
+ * The function must be called with kbdev->csf.scheduler.interrupt_lock held
+ * and it does not wait for the protected mode entry to complete.
  */
 void kbase_csf_enter_protected_mode(struct kbase_device *kbdev);
+
+/**
+ * kbase_csf_wait_protected_mode_enter - Wait for the completion of PROTM_ENTER
+ *                                       Global request sent to firmware.
+ *
+ * @kbdev: Instance of a GPU platform device that implements a CSF interface.
+ *
+ * This function needs to be called after kbase_csf_enter_protected_mode() to
+ * wait for the GPU to actually enter protected mode. GPU reset is triggered if
+ * the wait is unsuccessful.
+ */
+void kbase_csf_wait_protected_mode_enter(struct kbase_device *kbdev);
 
 static inline bool kbase_csf_firmware_mcu_halted(struct kbase_device *kbdev)
 {

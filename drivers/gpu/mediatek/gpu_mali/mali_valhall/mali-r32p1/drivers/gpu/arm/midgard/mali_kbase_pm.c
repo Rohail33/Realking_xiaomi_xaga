@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2010-2021 ARM Limited. All rights reserved.
@@ -59,7 +59,7 @@ int kbase_pm_context_active_handle_suspend(struct kbase_device *kbdev,
 	int c;
 
 	KBASE_DEBUG_ASSERT(kbdev != NULL);
-	dev_dbg(kbdev->dev, "%s - reason = %d, pid = %d\n", __func__,
+	dev_vdbg(kbdev->dev, "%s - reason = %d, pid = %d\n", __func__,
 		suspend_handler, current->pid);
 	kbase_pm_lock(kbdev);
 
@@ -103,7 +103,7 @@ int kbase_pm_context_active_handle_suspend(struct kbase_device *kbdev,
 	}
 
 	kbase_pm_unlock(kbdev);
-	dev_dbg(kbdev->dev, "%s %d\n", __func__, kbdev->pm.active_count);
+	dev_vdbg(kbdev->dev, "%s %d\n", __func__, kbdev->pm.active_count);
 
 	return 0;
 }
@@ -137,7 +137,7 @@ void kbase_pm_context_idle(struct kbase_device *kbdev)
 	}
 
 	kbase_pm_unlock(kbdev);
-	dev_dbg(kbdev->dev, "%s %d (pid = %d)\n", __func__,
+	dev_vdbg(kbdev->dev, "%s %d (pid = %d)\n", __func__,
 		kbdev->pm.active_count, current->pid);
 }
 
@@ -198,11 +198,11 @@ void kbase_pm_driver_suspend(struct kbase_device *kbdev)
 	 * waiting for a power down, since not all policies power down when this
 	 * reaches zero.
 	 */
-	dev_dbg(kbdev->dev, ">wait_event - waiting for active_count == 0 (pid = %d)\n",
+	dev_vdbg(kbdev->dev, ">wait_event - waiting for active_count == 0 (pid = %d)\n",
 		current->pid);
 	wait_event(kbdev->pm.zero_active_count_wait,
 		kbdev->pm.active_count == 0);
-	dev_dbg(kbdev->dev, ">wait_event - waiting done\n");
+	dev_vdbg(kbdev->dev, ">wait_event - waiting done\n");
 
 	/* NOTE: We synchronize with anything that was just finishing a
 	 * kbase_pm_context_idle() call by locking the pm.lock below

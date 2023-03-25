@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2019-2021 ARM Limited. All rights reserved.
@@ -140,7 +140,7 @@ static inline int copy_stream_header(char __user *buffer, size_t size,
 }
 
 /**
- * kbasep_timeline_copy_header - copy timeline headers to the user
+ * kbasep_timeline_copy_headers - copy timeline headers to the user
  *
  * @timeline:    Timeline instance
  * @buffer:      Pointer to the buffer provided by user

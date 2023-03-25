@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2020-2021 ARM Limited. All rights reserved.
@@ -197,7 +197,7 @@ static int calculate_coeff(struct kbase_ipa_counter_model_data *model_data,
 	if (total_energy >= 0)
 		coeff = total_energy;
 	else
-		dev_dbg(model_data->kbdev->dev,
+		dev_vdbg(model_data->kbdev->dev,
 			"Energy value came negative as %lld", total_energy);
 
 	/* Range: 0 <= coeff < 2^63 (because active_cycles >= 1). However, this
@@ -293,7 +293,7 @@ int kbase_ipa_counter_dynamic_coeff(struct kbase_ipa_model *model, u32 *coeffp)
 	 * that regular calls every 25-100 ms interval are expected.
 	 */
 	if (diff_ms > MAX_SAMPLE_INTERVAL_MS) {
-		dev_dbg(kbdev->dev,
+		dev_vdbg(kbdev->dev,
 			"Last sample was taken %lld milli seconds ago",
 			diff_ms);
 		return -EOVERFLOW;

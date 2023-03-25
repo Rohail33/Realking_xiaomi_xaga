@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2010-2021 ARM Limited. All rights reserved.
@@ -788,7 +788,7 @@ void kbase_hwaccess_pm_resume(struct kbase_device *kbdev)
 	kbdev->pm.suspending = false;
 #ifdef CONFIG_MALI_ARBITER_SUPPORT
 	if (kbase_pm_is_gpu_lost(kbdev)) {
-		dev_dbg(kbdev->dev, "%s: GPU lost in progress\n", __func__);
+		dev_vdbg(kbdev->dev, "%s: GPU lost in progress\n", __func__);
 		kbase_pm_unlock(kbdev);
 		return;
 	}
