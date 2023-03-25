@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2019-2021 ARM Limited. All rights reserved.
@@ -72,7 +72,7 @@ static u64 sub_alloc(struct kbase_csf_heap_context_allocator *const ctx_alloc)
 
 	bitmap_set(ctx_alloc->in_use, heap_nr, 1);
 
-	dev_dbg(kctx->kbdev->dev, "Allocated tiler heap context %d (0x%llX)\n",
+	dev_vdbg(kctx->kbdev->dev, "Allocated tiler heap context %d (0x%llX)\n",
 		heap_nr, heap_gpu_va);
 
 	return heap_gpu_va;
@@ -106,7 +106,7 @@ static void sub_free(struct kbase_csf_heap_context_allocator *const ctx_alloc,
 		return;
 
 	heap_nr = ctx_offset / HEAP_CTX_SIZE;
-	dev_dbg(kctx->kbdev->dev,
+	dev_vdbg(kctx->kbdev->dev,
 		"Freed tiler heap context %d (0x%llX)\n", heap_nr, heap_gpu_va);
 
 	bitmap_clear(ctx_alloc->in_use, heap_nr, 1);
@@ -126,7 +126,7 @@ int kbase_csf_heap_context_allocator_init(
 	mutex_init(&ctx_alloc->lock);
 	bitmap_zero(ctx_alloc->in_use, MAX_TILER_HEAPS);
 
-	dev_dbg(kctx->kbdev->dev,
+	dev_vdbg(kctx->kbdev->dev,
 		"Initialized a tiler heap context allocator\n");
 
 	return 0;
@@ -137,7 +137,7 @@ void kbase_csf_heap_context_allocator_term(
 {
 	struct kbase_context *const kctx = ctx_alloc->kctx;
 
-	dev_dbg(kctx->kbdev->dev,
+	dev_vdbg(kctx->kbdev->dev,
 		"Terminating tiler heap context allocator\n");
 
 	if (ctx_alloc->region) {

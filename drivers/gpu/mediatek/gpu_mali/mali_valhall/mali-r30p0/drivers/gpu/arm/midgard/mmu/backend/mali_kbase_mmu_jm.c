@@ -33,6 +33,7 @@
 #include "../mali_kbase_mmu_internal.h"
 #if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
 #include <mtk_gpufreq.h>
+#include "platform/mtk_platform_common.h"
 #endif
 
 void kbase_mmu_get_as_setup(struct kbase_mmu_table *mmut,
@@ -131,11 +132,13 @@ void kbase_mmu_report_fault_and_kill(struct kbase_context *kctx,
 	source_id = (fault->status >> 16);
 
 #if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+	if (!mtk_common_gpufreq_bringup()) {
 #if defined(CONFIG_MTK_GPUFREQ_V2)
-	gpufreq_dump_infra_status();
+		gpufreq_dump_infra_status();
 #else
-	mt_gpufreq_dump_infra_status();
+		mt_gpufreq_dump_infra_status();
 #endif /* CONFIG_MTK_GPUFREQ_V2 */
+	}
 #endif
 
 	/* terminal fault, print info about the fault */

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2014-2021 ARM Limited. All rights reserved.
@@ -164,7 +164,7 @@ static enum hrtimer_restart timer_callback(struct hrtimer *timer)
 		KBASE_DISJOINT_STATE_INTERLEAVED_CONTEXT_COUNT_THRESHOLD;
 					u32 softstop_flags = 0u;
 
-					dev_dbg(kbdev->dev, "Soft-stop");
+					dev_vdbg(kbdev->dev, "Soft-stop");
 					/* nr_user_contexts_running is updated
 					 * with the runpool_mutex, but we can't
 					 * take that here.
@@ -202,6 +202,7 @@ static enum hrtimer_restart timer_callback(struct hrtimer *timer)
 								/ 1000000u;
 #if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
 					if (!mtk_common_gpufreq_bringup()) {
+						mtk_common_debug_dump();
 #if defined(CONFIG_MTK_GPUFREQ_V2)
 						gpufreq_dump_infra_status();
 						gpufreq_hardstop_dump_slog();
@@ -250,7 +251,7 @@ static enum hrtimer_restart timer_callback(struct hrtimer *timer)
 					 * not soft-stop during
 					 * CONFIG_MALI_JOB_DUMP, however.
 					 */
-					dev_dbg(kbdev->dev, "Soft-stop");
+					dev_vdbg(kbdev->dev, "Soft-stop");
 				} else if (ticks ==
 					js_devdata->hard_stop_ticks_dumping) {
 					/* Job has been scheduled for at least
@@ -263,6 +264,7 @@ static enum hrtimer_restart timer_callback(struct hrtimer *timer)
 								/ 1000000u;
 #if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
 					if (!mtk_common_gpufreq_bringup()) {
+						mtk_common_debug_dump();
 #if defined(CONFIG_MTK_GPUFREQ_V2)
 						gpufreq_dump_infra_status();
 						gpufreq_hardstop_dump_slog();

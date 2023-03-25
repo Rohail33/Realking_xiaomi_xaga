@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2015-2021 ARM Limited. All rights reserved.
@@ -29,7 +29,7 @@
 #include <linux/version.h>
 
 #define pool_dbg(pool, format, ...) \
-	dev_dbg(pool->kbdev->dev, "%s-pool [%zu/%zu]: " format,	\
+	dev_vdbg(pool->kbdev->dev, "%s-pool [%zu/%zu]: " format,	\
 		(pool->next_pool) ? "kctx" : "kbdev",	\
 		kbase_mem_pool_size(pool),	\
 		kbase_mem_pool_max_size(pool),	\

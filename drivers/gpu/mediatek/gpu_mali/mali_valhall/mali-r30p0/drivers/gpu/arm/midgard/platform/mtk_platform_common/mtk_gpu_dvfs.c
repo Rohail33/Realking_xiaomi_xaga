@@ -71,6 +71,12 @@ void mtk_common_cal_gpu_utilization(unsigned int *pui32Loading,
                                     unsigned int *pui32Idle)
 #endif
 {
+#if MALI_USE_CSF
+	/* TODO: GPU DVFS */
+	(void)pui32Loading;
+	(void)pui32Block;
+	(void)pui32Idle;
+#else
 	struct kbase_device *kbdev = (struct kbase_device *)mtk_common_get_kbdev();
 	int utilisation, util_gl_share;
 	int util_cl_share[2];
@@ -126,5 +132,6 @@ void mtk_common_cal_gpu_utilization(unsigned int *pui32Loading,
 		current_util_compute = (100 * (diff->busy_cl[0]+diff->busy_cl[1])) /
 				max(diff->time_busy + diff->time_idle, 1u);
 	}
+#endif /* MALI_USE_CSF */
 }
 #endif

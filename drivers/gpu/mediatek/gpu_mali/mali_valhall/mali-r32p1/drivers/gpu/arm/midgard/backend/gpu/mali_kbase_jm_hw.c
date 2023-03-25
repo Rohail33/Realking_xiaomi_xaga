@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2010-2021 ARM Limited. All rights reserved.
@@ -187,7 +187,7 @@ static u64 select_job_chain(struct kbase_jd_atom *katom)
 		break;
 	}
 
-	dev_dbg(kctx->kbdev->dev,
+	dev_vdbg(kctx->kbdev->dev,
 		"Selected job chain 0x%llx for end atom %pK in state %d\n",
 		jc, (void *)katom, (int)rp->state);
 
@@ -212,7 +212,7 @@ void kbase_job_hw_submit(struct kbase_device *kbdev,
 	/* Command register must be available */
 	KBASE_DEBUG_ASSERT(kbasep_jm_is_js_free(kbdev, js, kctx));
 
-	dev_dbg(kctx->kbdev->dev, "Write JS_HEAD_NEXT 0x%llx for atom %pK\n",
+	dev_vdbg(kctx->kbdev->dev, "Write JS_HEAD_NEXT 0x%llx for atom %pK\n",
 		jc_head, (void *)katom);
 
 	kbase_reg_write(kbdev, JOB_SLOT_REG(js, JS_HEAD_NEXT_LO),
@@ -277,7 +277,7 @@ void kbase_job_hw_submit(struct kbase_device *kbdev,
 	katom->start_timestamp = ktime_get();
 
 	/* GO ! */
-	dev_dbg(kbdev->dev, "JS: Submitting atom %pK from ctx %pK to js[%d] with head=0x%llx",
+	dev_vdbg(kbdev->dev, "JS: Submitting atom %pK from ctx %pK to js[%d] with head=0x%llx",
 				katom, kctx, js, jc_head);
 
 	KBASE_KTRACE_ADD_JM_SLOT_INFO(kbdev, JM_SUBMIT, kctx, katom, jc_head, js,
@@ -517,7 +517,7 @@ void kbase_job_done(struct kbase_device *kbdev, u32 done)
 				}
 			}
 
-			dev_dbg(kbdev->dev, "Job ended with status 0x%08X\n",
+			dev_vdbg(kbdev->dev, "Job ended with status 0x%08X\n",
 							completion_code);
 
 			nr_done = kbase_backend_nr_atoms_submitted(kbdev, i);
@@ -606,7 +606,7 @@ void kbasep_job_slot_soft_or_hard_stop_do_action(struct kbase_device *kbdev,
 	if (action == JS_COMMAND_SOFT_STOP) {
 		if (kbase_jd_katom_is_protected(target_katom)) {
 #ifdef CONFIG_MALI_DEBUG
-			dev_dbg(kbdev->dev,
+			dev_vdbg(kbdev->dev,
 					"Attempt made to soft-stop a job that cannot be soft-stopped. core_reqs = 0x%x",
 					(unsigned int)core_reqs);
 #endif			/* CONFIG_MALI_DEBUG */
@@ -805,12 +805,12 @@ static int softstop_start_rp_nolock(
 	katom = kbase_gpu_inspect(kbdev, 1, 0);
 
 	if (!katom) {
-		dev_dbg(kctx->kbdev->dev, "No atom on job slot\n");
+		dev_vdbg(kctx->kbdev->dev, "No atom on job slot\n");
 		return -ESRCH;
 	}
 
 	if (!(katom->core_req & BASE_JD_REQ_START_RENDERPASS)) {
-		dev_dbg(kctx->kbdev->dev,
+		dev_vdbg(kctx->kbdev->dev,
 			"Atom %pK on job slot is not start RP\n", (void *)katom);
 		return -EPERM;
 	}
@@ -824,16 +824,16 @@ static int softstop_start_rp_nolock(
 		rp->state != KBASE_JD_RP_RETRY))
 		return -EINVAL;
 
-	dev_dbg(kctx->kbdev->dev, "OOM in state %d with region %pK\n",
+	dev_vdbg(kctx->kbdev->dev, "OOM in state %d with region %pK\n",
 		(int)rp->state, (void *)reg);
 
 	if (WARN_ON(katom != rp->start_katom))
 		return -EINVAL;
 
-	dev_dbg(kctx->kbdev->dev, "Adding region %pK to list %pK\n",
+	dev_vdbg(kctx->kbdev->dev, "Adding region %pK to list %pK\n",
 		(void *)reg, (void *)&rp->oom_reg_list);
 	list_move_tail(&reg->link, &rp->oom_reg_list);
-	dev_dbg(kctx->kbdev->dev, "Added region to list\n");
+	dev_vdbg(kctx->kbdev->dev, "Added region to list\n");
 
 	rp->state = (rp->state == KBASE_JD_RP_START ?
 		KBASE_JD_RP_PEND_OOM : KBASE_JD_RP_RETRY_PEND_OOM);
@@ -885,7 +885,7 @@ void kbase_jm_wait_for_zero_jobs(struct kbase_context *kctx)
 	/* Wait for the reset to complete */
 	kbase_reset_gpu_wait(kbdev);
 exit:
-	dev_dbg(kbdev->dev, "Zap: Finished Context %pK", kctx);
+	dev_vdbg(kbdev->dev, "Zap: Finished Context %pK", kctx);
 
 	/* Ensure that the signallers of the waitqs have finished */
 	mutex_lock(&kctx->jctx.lock);
@@ -946,7 +946,7 @@ KBASE_EXPORT_TEST_API(kbase_job_slot_term);
 void kbase_job_slot_softstop_swflags(struct kbase_device *kbdev, int js,
 			struct kbase_jd_atom *target_katom, u32 sw_flags)
 {
-	dev_dbg(kbdev->dev, "Soft-stop atom %pK with flags 0x%x (s:%d)\n",
+	dev_vdbg(kbdev->dev, "Soft-stop atom %pK with flags 0x%x (s:%d)\n",
 		target_katom, sw_flags, js);
 
 	KBASE_DEBUG_ASSERT(!(sw_flags & JS_COMMAND_MASK));
@@ -1540,7 +1540,7 @@ static u64 kbasep_apply_limited_core_mask(const struct kbase_device *kbdev,
 	const u64 result = affinity & limited_core_mask;
 
 #ifdef CONFIG_MALI_DEBUG
-	dev_dbg(kbdev->dev,
+	dev_vdbg(kbdev->dev,
 				"Limiting affinity due to BASE_JD_REQ_LIMITED_CORE_MASK from 0x%lx to 0x%lx (mask is 0x%lx)\n",
 				(unsigned long int)affinity,
 				(unsigned long int)result,

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2021 ARM Limited. All rights reserved.
@@ -683,7 +683,7 @@ static void kbasep_hwcnt_backend_csf_if_fw_get_gpu_cycle_count(
 }
 
 /**
- * kbasep_hwcnt_backedn_csf_if_fw_cts_destroy() - Destroy a CSF FW interface context.
+ * kbasep_hwcnt_backend_csf_if_fw_ctx_destroy() - Destroy a CSF FW interface context.
  *
  * @fw_ctx: Pointer to context to destroy.
  */

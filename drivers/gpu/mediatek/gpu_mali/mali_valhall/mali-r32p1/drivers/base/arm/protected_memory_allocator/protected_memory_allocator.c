@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2019-2021 ARM Limited. All rights reserved.
@@ -39,18 +39,17 @@
 #define ORDER_OF_PAGES_PER_BITFIELD_ELEM 6
 
 /**
- * struct simple_pma_device -	Simple implementation of a protected memory
- *				allocator device
- *
- * @pma_dev:			Protected memory allocator device pointer
- * @dev:  			Device pointer
- * @alloc_pages_bitfield_arr:	Status of all the physical memory pages within the
- *				protected memory region, one bit per page
- * @rmem_base:			Base address of the reserved memory region
- * @rmem_size:			Size of the reserved memory region, in pages
- * @num_free_pages:		Number of free pages in the memory region
- * @rmem_lock:			Lock to serialize the allocation and freeing of
- *				physical pages from the protected memory region
+ * struct simple_pma_device - Simple implementation of a protected memory
+ *                            allocator device
+ * @pma_dev: Protected memory allocator device pointer
+ * @dev:     Device pointer
+ * @allocated_pages_bitfield_arr: Status of all the physical memory pages within the
+ *                                protected memory region, one bit per page
+ * @rmem_base:      Base address of the reserved memory region
+ * @rmem_size:      Size of the reserved memory region, in pages
+ * @num_free_pages: Number of free pages in the memory region
+ * @rmem_lock:      Lock to serialize the allocation and freeing of
+ *                  physical pages from the protected memory region
  */
 struct simple_pma_device {
 	struct protected_memory_allocator_device pma_dev;
@@ -66,12 +65,20 @@ struct simple_pma_device {
  * Number of elements in array 'allocated_pages_bitfield_arr'. If the number of
  * pages required does not divide exactly by PAGES_PER_BITFIELD_ELEM, adds an
  * extra page for the remainder.
+ * @num_pages: number of pages
  */
 #define ALLOC_PAGES_BITFIELD_ARR_SIZE(num_pages) \
 	((PAGES_PER_BITFIELD_ELEM * (0 != (num_pages % PAGES_PER_BITFIELD_ELEM)) + \
 	num_pages) / PAGES_PER_BITFIELD_ELEM)
 
 /**
+ * small_granularity_alloc() - Allocate 1-32 power-of-two pages.
+ * @epma_dev: protected memory allocator device structure.
+ * @alloc_bitfield_idx: index of the relevant bitfield.
+ * @start_bit: starting bitfield index.
+ * @order: bitshift for number of pages. Order of 0 to 5 equals 1 to 32 pages.
+ * @pma: protected_memory_allocation struct.
+ *
  * Allocate a power-of-two number of pages, N, where
  * 0 <= N <= ORDER_OF_PAGES_PER_BITFIELD_ELEM - 1.  ie, Up to 32 pages. The routine
  * fills-in a pma structure and sets the appropriate bits in the allocated-pages
@@ -127,6 +134,12 @@ static void small_granularity_alloc(struct simple_pma_device *const epma_dev,
 }
 
 /**
+ * large_granularity_alloc() - Allocate pages at multiples of 64 pages.
+ * @epma_dev: protected memory allocator device structure.
+ * @start_alloc_bitfield_idx: index of the starting bitfield.
+ * @order: bitshift for number of pages. Order of 6+ equals 64+ pages.
+ * @pma: protected_memory_allocation struct.
+ *
  * Allocate a power-of-two number of pages, N, where
  * N >= ORDER_OF_PAGES_PER_BITFIELD_ELEM. ie, 64 pages or more. The routine fills-in
  * a pma structure and sets the appropriate bits in the allocated-pages bitfield array
@@ -190,7 +203,7 @@ static struct protected_memory_allocation *simple_pma_alloc_page(
 	size_t bit;
 	size_t count;
 
-	dev_dbg(epma_dev->dev, "%s(pma_dev=%px, order=%u\n",
+	dev_vdbg(epma_dev->dev, "%s(pma_dev=%px, order=%u\n",
 		__func__, (void *)pma_dev, order);
 
 	/* This is an example function that follows an extremely simple logic
@@ -228,7 +241,8 @@ static struct protected_memory_allocation *simple_pma_alloc_page(
 	spin_lock(&epma_dev->rmem_lock);
 
 	if (epma_dev->num_free_pages < num_pages_to_alloc) {
-		dev_err(epma_dev->dev, "not enough free pages\n");
+		dev_err(epma_dev->dev, "not enough free pages %u / %u\n",
+                        num_pages_to_alloc, epma_dev->num_free_pages);
 		devm_kfree(epma_dev->dev, pma);
 		spin_unlock(&epma_dev->rmem_lock);
 		return NULL;
@@ -327,7 +341,7 @@ static phys_addr_t simple_pma_get_phys_addr(
 	struct simple_pma_device *const epma_dev =
 		container_of(pma_dev, struct simple_pma_device, pma_dev);
 
-	dev_dbg(epma_dev->dev, "%s(pma_dev=%px, pma=%px, pa=%llx\n",
+	dev_vdbg(epma_dev->dev, "%s(pma_dev=%px, pma=%px, pa=%llx\n",
 		__func__, (void *)pma_dev, (void *)pma,
 		(unsigned long long)pma->pa);
 
@@ -352,7 +366,7 @@ static void simple_pma_free_page(
 
 	WARN_ON(pma == NULL);
 
-	dev_dbg(epma_dev->dev, "%s(pma_dev=%px, pma=%px, pa=%llx\n",
+	dev_vdbg(epma_dev->dev, "%s(pma_dev=%px, pma=%px, pa=%llx\n",
 		__func__, (void *)pma_dev, (void *)pma,
 		(unsigned long long)pma->pa);
 
@@ -415,6 +429,7 @@ static void simple_pma_free_page(
 	devm_kfree(epma_dev->dev, pma);
 }
 
+static int protected_memory_allocator_probe(struct platform_device *pdev) __attribute__((unused));
 static int protected_memory_allocator_probe(struct platform_device *pdev)
 {
 	struct simple_pma_device *epma_dev;
@@ -501,6 +516,120 @@ static int protected_memory_allocator_probe(struct platform_device *pdev)
 	return 0;
 }
 
+/* Below macro is hard coded*/
+#define GPR(X, Y) (X + (Y << 2))
+static int mtk_protected_memory_allocator_probe(struct platform_device *pdev)
+{
+	struct resource *res = NULL;
+	void __iomem *gpueb_base;
+	void __iomem *GPR_target;
+
+	struct simple_pma_device *epma_dev;
+	struct device_node *np;
+	phys_addr_t rmem_base;
+	size_t rmem_size;
+	size_t alloc_bitmap_pages_arr_size;
+	uint32_t gpr_offset, gpr_id, gmpu_table_size, psize;
+	uint64_t GPR_target_64;
+
+	np = pdev->dev.of_node;
+
+	if (!np) {
+		dev_err(&pdev->dev, "device node pointer not set\n");
+		return -ENODEV;
+	}
+
+	res = platform_get_resource_byname(pdev, IORESOURCE_MEM, "gpueb_base");
+
+	if (!res) {
+		dev_err(&pdev->dev, "can't have GPR access\n");
+		return -ENODEV;
+	}
+
+	of_property_read_u32(np, "gpr_offset", &gpr_offset);
+
+	if(!gpr_offset) {
+		dev_err(&pdev->dev, "can't have GPR offset access\n");
+		return -ENODEV;
+	}
+
+	of_property_read_u32(np, "gpr_id", &gpr_id);
+	of_property_read_u32(np, "gmpu_table_size", &gmpu_table_size);
+
+	dev_info(&pdev->dev,
+		"Using on addr(base + %x, %d), shift +%u\n",
+                 gpr_offset, gpr_id, gmpu_table_size);
+
+	of_property_read_u32(np, "protected_reserve_size", &psize);
+
+	if(!psize) {
+		dev_err(&pdev->dev, "can't find reserved-memory\n");
+		return -ENODEV;
+	}
+
+	gpueb_base = devm_ioremap(&pdev->dev, res->start, resource_size(res));
+	GPR_target = GPR(gpueb_base + gpr_offset, gpr_id);
+
+	/* Note GPR is 32 bits */
+	GPR_target_64 = *(uint32_t*)GPR_target;
+	rmem_base = (GPR_target_64 << PAGE_SHIFT) + gmpu_table_size;
+	rmem_size = psize; // at least 256KB
+	rmem_size = rmem_size >> PAGE_SHIFT;
+
+	dev_info(&pdev->dev,
+		"addr(%llx), size: %u pages\n", rmem_base, rmem_size);
+
+	devm_iounmap(&pdev->dev, gpueb_base);
+
+	of_node_put(np);
+	epma_dev = devm_kzalloc(&pdev->dev, sizeof(*epma_dev), GFP_KERNEL);
+	if (!epma_dev)
+		return -ENOMEM;
+
+	epma_dev->pma_dev.ops.pma_alloc_page = simple_pma_alloc_page;
+	epma_dev->pma_dev.ops.pma_get_phys_addr = simple_pma_get_phys_addr;
+	epma_dev->pma_dev.ops.pma_free_page = simple_pma_free_page;
+	epma_dev->pma_dev.owner = THIS_MODULE;
+	epma_dev->dev = &pdev->dev;
+	epma_dev->rmem_base = rmem_base;
+	epma_dev->rmem_size = rmem_size;
+	epma_dev->num_free_pages = rmem_size;
+	spin_lock_init(&epma_dev->rmem_lock);
+
+	alloc_bitmap_pages_arr_size = ALLOC_PAGES_BITFIELD_ARR_SIZE(epma_dev->rmem_size);
+
+	epma_dev->allocated_pages_bitfield_arr = devm_kzalloc(&pdev->dev,
+		alloc_bitmap_pages_arr_size * BITFIELD_ELEM_SIZE, GFP_KERNEL);
+
+	if (!epma_dev->allocated_pages_bitfield_arr) {
+		dev_err(&pdev->dev, "failed to allocate resources\n");
+		devm_kfree(&pdev->dev, epma_dev);
+		return -ENOMEM;
+	}
+
+	if (epma_dev->rmem_size % PAGES_PER_BITFIELD_ELEM) {
+		size_t extra_pages =
+			alloc_bitmap_pages_arr_size * PAGES_PER_BITFIELD_ELEM -
+			epma_dev->rmem_size;
+		size_t last_bitfield_index = alloc_bitmap_pages_arr_size - 1;
+
+		/* Mark the extra pages (that lie outside the reserved range) as
+		 * always in use.
+		 */
+		epma_dev->allocated_pages_bitfield_arr[last_bitfield_index] =
+			((1ULL << extra_pages) - 1) <<
+			(PAGES_PER_BITFIELD_ELEM - extra_pages);
+	}
+
+	platform_set_drvdata(pdev, &epma_dev->pma_dev);
+	dev_info(&pdev->dev,
+		"Protected memory allocator probed successfully\n");
+	dev_info(&pdev->dev, "Protected memory region: base=%llx num pages=%zu\n",
+		(unsigned long long)rmem_base, rmem_size);
+
+	return 0;
+}
+
 static int protected_memory_allocator_remove(struct platform_device *pdev)
 {
 	struct protected_memory_allocator_device *pma_dev =
@@ -536,7 +665,7 @@ static const struct of_device_id protected_memory_allocator_dt_ids[] = {
 MODULE_DEVICE_TABLE(of, protected_memory_allocator_dt_ids);
 
 static struct platform_driver protected_memory_allocator_driver = {
-	.probe = protected_memory_allocator_probe,
+	.probe = mtk_protected_memory_allocator_probe,
 	.remove = protected_memory_allocator_remove,
 	.driver = {
 		.name = "simple_protected_memory_allocator",

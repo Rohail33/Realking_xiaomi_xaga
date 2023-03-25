@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2014-2016, 2018-2021 ARM Limited. All rights reserved.
@@ -40,7 +40,7 @@ void kbase_reg_write(struct kbase_device *kbdev, u32 offset, u32 value)
 		kbase_io_history_add(&kbdev->io_history, kbdev->reg + offset,
 				value, 1);
 #endif /* CONFIG_DEBUG_FS */
-//	dev_dbg(kbdev->dev, "w: reg %08x val %08x", offset, value);
+//	dev_vdbg(kbdev->dev, "w: reg %08x val %08x", offset, value);
 }
 
 KBASE_EXPORT_TEST_API(kbase_reg_write);
@@ -59,7 +59,7 @@ u32 kbase_reg_read(struct kbase_device *kbdev, u32 offset)
 		kbase_io_history_add(&kbdev->io_history, kbdev->reg + offset,
 				val, 0);
 #endif /* CONFIG_DEBUG_FS */
-//	dev_dbg(kbdev->dev, "r: reg %08x val %08x", offset, val);
+//	dev_vdbg(kbdev->dev, "r: reg %08x val %08x", offset, val);
 
 	return val;
 }

@@ -23,4 +23,7 @@
 
 #include "mali_kbase_gator_hwcnt_names_tbex.h"
 
+#include "mali_kbase_gator_hwcnt_names_todx.h"
+
+
 #endif

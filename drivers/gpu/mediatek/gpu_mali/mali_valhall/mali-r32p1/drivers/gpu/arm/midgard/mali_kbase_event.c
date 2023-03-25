@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2010-2016, 2018-2021 ARM Limited. All rights reserved.
@@ -42,7 +42,7 @@ static struct base_jd_udata kbase_event_process(struct kbase_context *kctx, stru
 	KBASE_TLSTREAM_TL_DEL_ATOM(kbdev, katom);
 
 	katom->status = KBASE_JD_ATOM_STATE_UNUSED;
-	dev_dbg(kbdev->dev, "Atom %pK status to unused\n", (void *)katom);
+	dev_vdbg(kbdev->dev, "Atom %pK status to unused\n", (void *)katom);
 	wake_up(&katom->completed);
 
 	return data;
@@ -66,7 +66,7 @@ int kbase_event_dequeue(struct kbase_context *ctx, struct base_jd_event_v2 *ueve
 		mutex_unlock(&ctx->event_mutex);
 		uevent->event_code = BASE_JD_EVENT_DRV_TERMINATED;
 		memset(&uevent->udata, 0, sizeof(uevent->udata));
-		dev_dbg(ctx->kbdev->dev,
+		dev_vdbg(ctx->kbdev->dev,
 				"event system closed, returning BASE_JD_EVENT_DRV_TERMINATED(0x%X)\n",
 				BASE_JD_EVENT_DRV_TERMINATED);
 		return 0;
@@ -79,7 +79,7 @@ int kbase_event_dequeue(struct kbase_context *ctx, struct base_jd_event_v2 *ueve
 
 	mutex_unlock(&ctx->event_mutex);
 
-	dev_dbg(ctx->kbdev->dev, "event dequeuing %pK\n", (void *)atom);
+	dev_vdbg(ctx->kbdev->dev, "event dequeuing %pK\n", (void *)atom);
 	uevent->event_code = atom->event_code;
 
 	uevent->atom_number = (atom - ctx->jctx.atoms);
@@ -164,7 +164,7 @@ void kbase_event_post(struct kbase_context *ctx, struct kbase_jd_atom *atom)
 {
 	struct kbase_device *kbdev = ctx->kbdev;
 
-	dev_dbg(kbdev->dev, "Posting event for atom %pK\n", (void *)atom);
+	dev_vdbg(kbdev->dev, "Posting event for atom %pK\n", (void *)atom);
 
 	if (WARN_ON(atom->status != KBASE_JD_ATOM_STATE_COMPLETED)) {
 		dev_warn(kbdev->dev,
@@ -178,21 +178,21 @@ void kbase_event_post(struct kbase_context *ctx, struct kbase_jd_atom *atom)
 
 	if (atom->core_req & BASE_JD_REQ_EVENT_ONLY_ON_FAILURE) {
 		if (atom->event_code == BASE_JD_EVENT_DONE) {
-			dev_dbg(kbdev->dev, "Suppressing event (atom done)\n");
+			dev_vdbg(kbdev->dev, "Suppressing event (atom done)\n");
 			kbase_event_process_noreport(ctx, atom);
 			return;
 		}
 	}
 
 	if (atom->core_req & BASEP_JD_REQ_EVENT_NEVER) {
-		dev_dbg(kbdev->dev, "Suppressing event (never)\n");
+		dev_vdbg(kbdev->dev, "Suppressing event (never)\n");
 		kbase_event_process_noreport(ctx, atom);
 		return;
 	}
 	KBASE_TLSTREAM_TL_ATTRIB_ATOM_STATE(kbdev, atom, TL_ATOM_STATE_POSTED);
 	if (atom->core_req & BASE_JD_REQ_EVENT_COALESCE) {
 		/* Don't report the event until other event(s) have completed */
-		dev_dbg(kbdev->dev, "Deferring event (coalesced)\n");
+		dev_vdbg(kbdev->dev, "Deferring event (coalesced)\n");
 		mutex_lock(&ctx->event_mutex);
 		list_add_tail(&atom->dep_item[0], &ctx->event_coalesce_list);
 		++ctx->event_coalesce_count;
@@ -206,7 +206,7 @@ void kbase_event_post(struct kbase_context *ctx, struct kbase_jd_atom *atom)
 		list_add_tail(&atom->dep_item[0], &ctx->event_list);
 		atomic_add(event_count, &ctx->event_count);
 		mutex_unlock(&ctx->event_mutex);
-		dev_dbg(kbdev->dev, "Reporting %d events\n", event_count);
+		dev_vdbg(kbdev->dev, "Reporting %d events\n", event_count);
 
 		kbase_event_wakeup(ctx);
 

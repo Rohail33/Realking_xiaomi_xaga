@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2014-2021 ARM Limited. All rights reserved.
@@ -1031,7 +1031,7 @@ void kbase_backend_run_atom(struct kbase_device *kbdev,
 				struct kbase_jd_atom *katom)
 {
 	lockdep_assert_held(&kbdev->hwaccess_lock);
-	dev_dbg(kbdev->dev, "Backend running atom %pK\n", (void *)katom);
+	dev_vdbg(kbdev->dev, "Backend running atom %pK\n", (void *)katom);
 
 	kbase_gpu_enqueue_atom(kbdev, katom);
 	kbase_backend_slot_update(kbdev);
@@ -1091,7 +1091,7 @@ void kbase_gpu_complete_hw(struct kbase_device *kbdev, int js,
 	struct kbase_jd_atom *katom = kbase_gpu_inspect(kbdev, js, 0);
 	struct kbase_context *kctx = katom->kctx;
 
-	dev_dbg(kbdev->dev,
+	dev_vdbg(kbdev->dev,
 		"Atom %pK completed on hw with code 0x%x and job_tail 0x%llx (s:%d)\n",
 		(void *)katom, completion_code, job_tail, js);
 
@@ -1211,7 +1211,7 @@ void kbase_gpu_complete_hw(struct kbase_device *kbdev, int js,
 
 	if (job_tail != 0 && job_tail != katom->jc) {
 		/* Some of the job has been executed */
-		dev_dbg(kbdev->dev,
+		dev_vdbg(kbdev->dev,
 			"Update job chain address of atom %pK to resume from 0x%llx\n",
 			(void *)katom, job_tail);
 
@@ -1250,7 +1250,7 @@ void kbase_gpu_complete_hw(struct kbase_device *kbdev, int js,
 						next_katom->work_id);
 			kbdev->hwaccess.backend.slot_rb[js].last_context =
 							next_katom->kctx;
-#if defined(CONFIG_MALI_MTK_GPU_BM_2)
+#if defined(CONFIG_MALI_MTK_GPU_BM_JM)
             if(js == 0) {
                 kbdev->v1->ctx = (u32)next_katom->kctx->id;
                 kbdev->v1->job = next_katom->work_id;
@@ -1271,7 +1271,7 @@ void kbase_gpu_complete_hw(struct kbase_device *kbdev, int js,
 	}
 #endif
 
-#if defined(CONFIG_MALI_MTK_GPU_BM_2)
+#if defined(CONFIG_MALI_MTK_GPU_BM_JM)
 	{
 		/* The atom in the HEAD */
 		struct kbase_jd_atom *next_katom = kbase_gpu_inspect(kbdev, js,
@@ -1298,7 +1298,7 @@ void kbase_gpu_complete_hw(struct kbase_device *kbdev, int js,
 		katom = kbase_jm_complete(kbdev, katom, end_timestamp);
 
 	if (katom) {
-		dev_dbg(kbdev->dev,
+		dev_vdbg(kbdev->dev,
 			"Cross-slot dependency %pK has become runnable.\n",
 			(void *)katom);
 
@@ -1478,11 +1478,10 @@ bool kbase_backend_soft_hard_stop_slot(struct kbase_device *kbdev,
 		else
 			katom_idx1_valid = false;
 	} else {
-		katom_idx0_valid = (katom_idx0 &&
-				(!kctx || katom_idx0->kctx == kctx));
-		katom_idx1_valid = (katom_idx1 &&
-				(!kctx || katom_idx1->kctx == kctx) &&
-				prio_idx0 == prio_idx1);
+		katom_idx0_valid =
+			(katom_idx0 && (!kctx || katom_idx0->kctx == kctx));
+		katom_idx1_valid =
+			(katom_idx1 && (!kctx || katom_idx1->kctx == kctx));
 	}
 
 	if (katom_idx0_valid)

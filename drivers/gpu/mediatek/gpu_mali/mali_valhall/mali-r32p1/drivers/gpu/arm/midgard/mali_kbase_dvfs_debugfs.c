@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2020-2021 ARM Limited. All rights reserved.
@@ -38,11 +38,20 @@ static int kbasep_dvfs_utilization_debugfs_show(struct seq_file *file, void *dat
 	struct kbase_device *kbdev = file->private;
 
 #if MALI_USE_CSF
+#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && \
+	IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
+	seq_printf(file, "busy_time: %u idle_time: %u protm_time: %u\n",
+		   kbdev->pm.backend.metrics.values.time_busy[0],
+		   kbdev->pm.backend.metrics.values.time_idle[0],
+		   kbdev->pm.backend.metrics.values.time_in_protm);
+#else
 	seq_printf(file, "busy_time: %u idle_time: %u protm_time: %u\n",
 		   kbdev->pm.backend.metrics.values.time_busy,
 		   kbdev->pm.backend.metrics.values.time_idle,
 		   kbdev->pm.backend.metrics.values.time_in_protm);
+#endif
 #else
+
 	seq_printf(file, "busy_time: %u idle_time: %u\n",
 		   kbdev->pm.backend.metrics.values.time_busy,
 		   kbdev->pm.backend.metrics.values.time_idle);

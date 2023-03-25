@@ -9,6 +9,7 @@
 #include <linux/device.h>
 #include <linux/delay.h>
 #include <linux/spinlock.h>
+#include <linux/pm_qos.h>
 #include <mali_kbase.h>
 #include <mali_kbase_defs.h>
 #include <mali_kbase_config.h>
@@ -16,6 +17,7 @@
 #include "platform/mtk_platform_common.h"
 #include <ged_dvfs.h>
 #include <mtk_gpufreq.h>
+#include <mtk_gpu_utility.h>
 #if IS_ENABLED(CONFIG_MTK_AEE_IPANIC)
 #include <mboot_params.h>
 #endif
@@ -23,15 +25,9 @@
 #include <mtk_gpu_power_sspm_ipi.h>
 #endif
 
-#define MALI_TAG				"[GPU/MALI]"
-#define mali_pr_info(fmt, args...)		pr_info(MALI_TAG"[INFO]"fmt, ##args)
-#define mali_pr_debug(fmt, args...)		pr_debug(MALI_TAG"[DEBUG]"fmt, ##args)
-
 DEFINE_MUTEX(g_mfg_lock);
-
-//FIXME
-static int g_curFreqID;
-static int g_is_suspend;
+static int g_cur_opp_idx;
+static struct pm_qos_request g_qos_request;
 
 enum gpu_dvfs_status_step {
 	GPU_DVFS_STATUS_STEP_1 = 0x1,
@@ -71,35 +67,30 @@ static int pm_callback_power_on_nolock(struct kbase_device *kbdev)
 #if defined(CONFIG_MTK_GPUFREQ_V2)
 	if (mtk_common_gpufreq_bringup()) {
 		mtk_common_pm_mfg_active();
-		return 1;
+		return 0;
 	}
 
 	if (!gpufreq_power_ctrl_enable()) {
 		mtk_common_pm_mfg_active();
-#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && IS_ENABLED(CONFIG_MTK_GPU_COMMON_DVFS)
+#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
 		ged_dvfs_gpu_clock_switch_notify(1);
 #endif
-		return 1;
+		return 0;
 	}
 #endif /* CONFIG_MTK_GPUFREQ_V2 */
 
 	if (mtk_common_pm_is_mfg_active())
 		return 0;
 
-	mali_pr_debug("@%s: power on ...\n", __func__);
+	dev_vdbg(kbdev->dev, "GPU PM Callback - Active");
 
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_1);
-
-	if (g_is_suspend == 1) {
-		mali_pr_info("@%s: discard powering on since GPU is suspended\n", __func__);
-		return 0;
-	}
 
 	/* on,off/ SWCG(BG3D)/ MTCMOS/ BUCK */
 #if defined(CONFIG_MTK_GPUFREQ_V2)
 	if (gpufreq_power_control(POWER_ON) < 0) {
-		mali_pr_info("@%s: fail to power on\n", __func__);
-		return 0;
+		dev_info(kbdev->dev, "GPU PM Callback - Power On Failed");
+		return 1;
 	}
 #endif /* CONFIG_MTK_GPUFREQ_V2 */
 
@@ -115,17 +106,17 @@ static int pm_callback_power_on_nolock(struct kbase_device *kbdev)
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_3);
 
 	/* resume frequency */
-	mtk_common_gpufreq_commit(g_curFreqID);
+	mtk_common_gpufreq_commit(g_cur_opp_idx);
 
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_4);
 
-#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && IS_ENABLED(CONFIG_MTK_GPU_COMMON_DVFS)
+#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
 	ged_dvfs_gpu_clock_switch_notify(1);
 #endif
 
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_5);
 
-	return 1;
+	return 0;
 }
 
 static void pm_callback_power_off_nolock(struct kbase_device *kbdev)
@@ -141,11 +132,11 @@ static void pm_callback_power_off_nolock(struct kbase_device *kbdev)
 	if (!mtk_common_pm_is_mfg_active())
 		return;
 
-	mali_pr_debug("@%s: power off ...\n", __func__);
+	dev_vdbg(kbdev->dev, "GPU PM Callback - Idle");
 
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_6);
 
-#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && IS_ENABLED(CONFIG_MTK_GPU_COMMON_DVFS)
+#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
 	ged_dvfs_gpu_clock_switch_notify(0);
 #endif
 
@@ -157,7 +148,7 @@ static void pm_callback_power_off_nolock(struct kbase_device *kbdev)
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_8);
 
 	/* suspend frequency */
-	g_curFreqID = mtk_common_ged_dvfs_get_last_commit_idx();
+	g_cur_opp_idx = mtk_common_ged_dvfs_get_last_commit_idx();
 
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_9);
 
@@ -171,7 +162,7 @@ static void pm_callback_power_off_nolock(struct kbase_device *kbdev)
 	/* on,off/ SWCG(BG3D)/ MTCMOS/ BUCK */
 #if defined(CONFIG_MTK_GPUFREQ_V2)
 	if (gpufreq_power_control(POWER_OFF) < 0) {
-		mali_pr_info("@%s: fail to power off\n", __func__);
+		dev_info(kbdev->dev, "GPU PM Callback - Power Off Failed");
 		return;
 	}
 #endif /* CONFIG_MTK_GPUFREQ_V2 */
@@ -183,11 +174,16 @@ static int pm_callback_power_on(struct kbase_device *kbdev)
 {
 	int ret = 0;
 
+	if (kbdev->gpu_props.props.raw_props.coherency_mode == COHERENCY_ACE_LITE) {
+		cpu_latency_qos_update_request(&g_qos_request, 149);
+	}
+
 	mutex_lock(&g_mfg_lock);
 	ret = pm_callback_power_on_nolock(kbdev);
 #if IS_ENABLED(CONFIG_MTK_GPU_SWPM_SUPPORT)
 	MTKGPUPower_model_resume();
 #endif
+	mtk_notify_gpu_power_change(1);
 	mutex_unlock(&g_mfg_lock);
 
 	return ret;
@@ -196,38 +192,31 @@ static int pm_callback_power_on(struct kbase_device *kbdev)
 static void pm_callback_power_off(struct kbase_device *kbdev)
 {
 	mutex_lock(&g_mfg_lock);
+	mtk_notify_gpu_power_change(0);
 #if IS_ENABLED(CONFIG_MTK_GPU_SWPM_SUPPORT)
 	MTKGPUPower_model_suspend();
 #endif
 	pm_callback_power_off_nolock(kbdev);
 	mutex_unlock(&g_mfg_lock);
+
+	if (kbdev->gpu_props.props.raw_props.coherency_mode == COHERENCY_ACE_LITE) {
+		cpu_latency_qos_update_request(&g_qos_request, PM_QOS_DEFAULT_VALUE);
+	}
 }
 
 static void pm_callback_power_suspend(struct kbase_device *kbdev)
 {
 	mutex_lock(&g_mfg_lock);
-
-	if (mtk_common_pm_is_mfg_active()) {
-		pm_callback_power_off_nolock(kbdev);
-		mali_pr_info("@%s: force powering off GPU\n", __func__);
-	}
-	g_is_suspend = 1;
-	mali_pr_info("@%s: gpu_suspend\n", __func__);
-
+	dev_vdbg(kbdev->dev, "GPU PM Callback - Suspend");
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_E);
-
 	mutex_unlock(&g_mfg_lock);
 }
 
 static void pm_callback_power_resume(struct kbase_device *kbdev)
 {
 	mutex_lock(&g_mfg_lock);
-
-	g_is_suspend = 0;
-	mali_pr_info("@%s: gpu_resume\n", __func__);
-
+	dev_vdbg(kbdev->dev, "GPU PM Callback - Resume");
 	gpu_dvfs_status_footprint(GPU_DVFS_STATUS_STEP_F);
-
 	mutex_unlock(&g_mfg_lock);
 }
 
@@ -265,18 +254,19 @@ int mtk_platform_device_init(struct kbase_device *kbdev)
 {
 
 	if (!kbdev) {
-		mali_pr_info("@%s: kbdev is NULL\n", __func__);
+		dev_info(kbdev->dev, "@%s: kbdev is NULL", __func__);
 		return -1;
 	}
 
+	cpu_latency_qos_add_request(&g_qos_request,
+		PM_QOS_DEFAULT_VALUE);
+
 	gpu_dvfs_status_reset_footprint();
-
-	//FIXME
-	g_is_suspend = -1;
-
-	mali_pr_info("@%s: initialize successfully\n", __func__);
+	dev_info(kbdev->dev, "GPU PM Callback - Initialize Done");
 
 	return 0;
 }
 
-void mtk_platform_device_term(struct kbase_device *kbdev) { }
+void mtk_platform_device_term(struct kbase_device *kbdev) {
+	cpu_latency_qos_remove_request(&g_qos_request);
+}

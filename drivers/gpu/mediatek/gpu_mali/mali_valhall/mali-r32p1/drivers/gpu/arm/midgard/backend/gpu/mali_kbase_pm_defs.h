@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  *
  * (C) COPYRIGHT 2014-2021 ARM Limited. All rights reserved.
@@ -108,14 +108,32 @@ enum kbase_shader_core_state {
  *           with 2 (2x256ns).
  */
 struct kbasep_pm_metrics {
-	u32 time_busy;
-	u32 time_idle;
 #if MALI_USE_CSF
 	u32 time_in_protm;
-#else
+#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && \
+	IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
+
+	//[0]: Active, [1]: TILER, [2]: COMP, [3]: FRAG
+	u32 time_busy[4];
+	u32 time_idle[4];
+
 	u32 busy_cl[2];
 	u32 busy_gl;
-#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
+	u32 busy_gl_plus[3];
+#else
+
+	u32 time_busy;
+	u32 time_idle;
+#endif
+
+#else
+	u32 time_busy;
+	u32 time_idle;
+
+	u32 busy_cl[2];
+	u32 busy_gl;
+#if IS_ENABLED(CONFIG_MALI_MIDGARD_DVFS) && \
+	IS_ENABLED(CONFIG_MALI_MTK_DVFS_POLICY)
 	u32 busy_gl_plus[3];
 #endif
 #endif
@@ -371,6 +389,9 @@ struct kbase_pm_backend_data {
 
 	bool gpu_powered;
 	bool gpu_ready;
+#if IS_ENABLED(CONFIG_MALI_MTK_MFGSYS_PM)
+	bool mfgsys_powered;
+#endif
 
 	u64 pm_shaders_core_mask;
 
@@ -569,7 +590,7 @@ struct kbase_pm_policy {
 	 */
 	bool (*get_core_active)(struct kbase_device *kbdev);
 
-	/**
+	/*
 	 * Function called when a power event occurs
 	 *
 	 * @kbdev: The kbase device structure for the device (must be a

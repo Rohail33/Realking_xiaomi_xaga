@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2011-2021 ARM Limited. All rights reserved.
@@ -962,7 +962,8 @@ static long kbasep_vinstr_hwcnt_reader_ioctl_get_hwver(
 }
 
 /**
- * The hwcnt reader's ioctl command - get API version.
+ * kbasep_vinstr_hwcnt_reader_ioctl_get_api_version() - get API version ioctl
+ *                                                      command.
  * @cli:    The non-NULL pointer to the client
  * @arg:    Command's argument.
  * @size:   Size of arg.
@@ -1264,14 +1265,11 @@ void MTK_update_gpu_LTR(void)
 	unsigned int stall_counter[4] = {0};
 	int i = 0;
 	mtk_get_gpu_loading(&pm_gpu_loading);
-#if defined(CONFIG_MTK_GPUFREQ_V2)
 	gpu_perf_counter.counter[VINSTR_GPU_FREQ] = gpufreq_get_cur_freq(TARGET_DEFAULT);
 	gpu_perf_counter.counter[VINSTR_GPU_VOLT] = gpufreq_get_cur_volt(TARGET_DEFAULT);
-#else
-	gpu_perf_counter.counter[VINSTR_GPU_FREQ] = mt_gpufreq_get_cur_freq();
-	gpu_perf_counter.counter[VINSTR_GPU_VOLT] = mt_gpufreq_get_cur_volt();
-#endif
 	gpu_perf_counter.counter[VINSTR_GPU_LOADING] = pm_gpu_loading;
+
+
 	for (i = VINSTR_GPU_ACTIVE; i <= VINSTR_JS1_ACTIVE; i++) {
 		int pmu_index = gpu_pmu_index[i] & 0x1FF;
 		int index_cnt = gpu_pmu_index[i] >> 9;
@@ -1281,7 +1279,6 @@ void MTK_update_gpu_LTR(void)
 			pmu_index += 64;
 		}
 	}
-	mtk_GPU_STALL_RAW(stall_counter, 4);
 	gpu_perf_counter.counter[VINSTR_STALL0] = stall_counter[0];
 	gpu_perf_counter.counter[VINSTR_STALL1] = stall_counter[1];
 	gpu_perf_counter.counter[VINSTR_STALL2] = stall_counter[2];

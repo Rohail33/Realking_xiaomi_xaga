@@ -8,22 +8,6 @@ CONFIG_MALI_MIDGARD := $(CONFIG_MTK_GPU_SUPPORT)
 # use mtk platform
 CONFIG_MALI_PLATFORM_NAME := $(MTK_PLATFORM)
 
-CONFIG_MALI_DEBUG := y
-CONFIG_MALI_DEVFREQ := y
-CONFIG_MALI_MIDGARD_DVFS := y
-
-CONFIG_MALI_REAL_HW := y
-CONFIG_MALI_MTK_DEBUG := y
-CONFIG_MALI_MTK_DEBUG_DFD := y
-CONFIG_MALI_MTK_MEM_TRACK := y
-CONFIG_MALI_MTK_DEVFREQ := y
-CONFIG_MALI_MTK_DEVFREQ_THERMAL := y
-
-ifneq (, $(findstring $(MTK_PLATFORM), "mt6885" "mt6873" "mt6853" "mt6877"))
-CONFIG_MALI_MTK_GPU_BM_2 := y
-$(info *GPU defined GPU BM QoS 2.0)
-endif
-
 ccflags-y += -I$(srctree)/include
 ccflags-y += -I$(srctree)/drivers/staging/android
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/base/power/include
@@ -35,11 +19,11 @@ ccflags-y += -I$(srctree)/drivers/gpu/mediatek/ged/include
 ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_bm
 ccflags-y += -I$(srctree)/drivers/gpu/mediatek/mt-plat
 ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpufreq
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/backend/gpu
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/include
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/platform/$(MTK_PLATFORM)
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/platform/mtk_platform_common
-ccflags-y += -I$(srctree)/drivers/gpu/mediatek/gpu_mali/mali_valhall/mali-r32p0/drivers/gpu/arm/midgard/debug
+ccflags-y += -I$(src)/backend/gpu
+ccflags-y += -I$(src)/include
+ccflags-y += -I$(src)/platform/$(MTK_PLATFORM)
+ccflags-y += -I$(src)/platform/mtk_platform_common
+ccflags-y += -I$(src)/debug
 ccflags-y += -I$(srctree)/drivers/staging/android/ion
 ccflags-y += -I$(srctree)/drivers/iommu
 ccflags-y += -I$(srctree)/drivers/misc/mediatek/include/mt-plat

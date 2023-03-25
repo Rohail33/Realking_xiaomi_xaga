@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2019-2021 ARM Limited. All rights reserved.
@@ -157,7 +157,7 @@ int kbase_context_common_init(struct kbase_context *kctx)
 #if IS_ENABLED(CONFIG_GPU_TRACEPOINTS)
 	atomic_set(&kctx->jctx.work_id, 0);
 #endif
-#if defined(CONFIG_MALI_MTK_GPU_BM_2)
+#if defined(CONFIG_MALI_MTK_GPU_BM_JM)
 	atomic_set(&kctx->jctx.work_id, 0);
 #endif
 #endif
@@ -332,7 +332,7 @@ void kbase_context_sticky_resource_term(struct kbase_context *kctx)
 				BITS_PER_LONG);
 
 		if (!WARN_ON(!kctx->pending_regions[cookie])) {
-			dev_dbg(kctx->kbdev->dev, "Freeing pending unmapped region\n");
+			dev_vdbg(kctx->kbdev->dev, "Freeing pending unmapped region\n");
 			kbase_mem_phy_alloc_put(
 				kctx->pending_regions[cookie]->cpu_alloc);
 			kbase_mem_phy_alloc_put(

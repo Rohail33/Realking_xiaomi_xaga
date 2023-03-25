@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  *
  * (C) COPYRIGHT 2011-2021 ARM Limited. All rights reserved.
@@ -71,6 +71,10 @@
 #include <linux/regulator/consumer.h>
 #include <linux/memory_group_manager.h>
 
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+#include <ged_log.h>
+#endif
+
 #if defined(CONFIG_PM_RUNTIME) || defined(CONFIG_PM)
 #define KBASE_PM_RUNTIME 1
 #endif
@@ -111,12 +115,12 @@
 /**
  * Maximum size in bytes of a MMU lock region, as a logarithm
  */
-#define KBASE_LOCK_REGION_MAX_SIZE_LOG2 (64)
+#define KBASE_LOCK_REGION_MAX_SIZE_LOG2 (48) /*  256 TB */
 
 /**
  * Minimum size in bytes of a MMU lock region, as a logarithm
  */
-#define KBASE_LOCK_REGION_MIN_SIZE_LOG2 (15)
+#define KBASE_LOCK_REGION_MIN_SIZE_LOG2 (15) /* 32 kB */
 
 /**
  * Maximum number of GPU memory region zones
@@ -269,6 +273,21 @@ struct kbase_mmu_table {
 	struct kbase_context *kctx;
 };
 
+/**
+ * struct kbase_reg_zone - Information about GPU memory region zones
+ * @base_pfn: Page Frame Number in GPU virtual address space for the start of
+ *            the Zone
+ * @va_size_pages: Size of the Zone in pages
+ *
+ * Track information about a zone KBASE_REG_ZONE() and related macros.
+ * In future, this could also store the &rb_root that are currently in
+ * &kbase_context and &kbase_csf_device.
+ */
+struct kbase_reg_zone {
+	u64 base_pfn;
+	u64 va_size_pages;
+};
+
 #if MALI_USE_CSF
 #include "csf/mali_kbase_csf_defs.h"
 #else
@@ -396,6 +415,10 @@ struct kbase_pm_device_data {
 
 #if MALI_USE_CSF
 	u64 debug_core_mask;
+#if defined(CONFIG_MALI_MTK_DUMMY_CM)
+	u32 debug_core_mask_en;
+	u64 dummy_core_mask;
+#endif
 #else
 	/* One mask per job slot. */
 	u64 debug_core_mask[BASE_JM_MAX_NR_SLOTS];
@@ -554,7 +577,7 @@ struct kbase_mmu_mode const *kbase_mmu_mode_get_aarch64(void);
 
 #define DEVNAME_SIZE	16
 
-#if defined(CONFIG_MALI_MTK_GPU_BM_2)
+#if defined(CONFIG_MALI_MTK_GPU_BM_JM)
 struct job_status_qos {
         phys_addr_t phyaddr;
         size_t size;
@@ -854,6 +877,13 @@ struct kbase_process {
  *                         backend specific data for HW access layer.
  * @faults_pending:        Count of page/bus faults waiting for bottom half processing
  *                         via workqueues.
+ * @mmu_hw_operation_in_progress: Set before sending the MMU command and is
+ *                         cleared after the command is complete. Whilst this
+ *                         flag is set, the write to L2_PWROFF register will be
+ *                         skipped which is needed to workaround the HW issue
+ *                         GPU2019-3878. PM state machine is invoked after
+ *                         clearing this flag and hwaccess_lock is used to
+ *                         serialize the access.
  * @poweroff_pending:      Set when power off operation for GPU is started, reset when
  *                         power on for GPU is started.
  * @infinite_cache_active_default: Set to enable using infinite cache for all the
@@ -1099,6 +1129,9 @@ struct kbase_device {
 
 	atomic_t faults_pending;
 
+#if MALI_USE_CSF
+	bool mmu_hw_operation_in_progress;
+#endif
 	bool poweroff_pending;
 
 #if (KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE)
@@ -1189,9 +1222,13 @@ struct kbase_device {
 	struct ion_client *client;
 #endif
 
-#if defined(CONFIG_MALI_MTK_GPU_BM_2)
+#if defined(CONFIG_MALI_MTK_GPU_BM_JM)
 	struct job_status_qos job_status_addr;
 	struct v1_data* v1;
+#endif
+
+#if IS_ENABLED(CONFIG_MALI_MTK_DEBUG)
+	GED_LOG_BUF_HANDLE ged_log_buf_hnd_kbase;
 #endif
 };
 
@@ -1416,21 +1453,6 @@ struct kbase_sub_alloc {
 	struct list_head link;
 	struct page *page;
 	DECLARE_BITMAP(sub_pages, SZ_2M / SZ_4K);
-};
-
-/**
- * struct kbase_reg_zone - Information about GPU memory region zones
- * @base_pfn: Page Frame Number in GPU virtual address space for the start of
- *            the Zone
- * @va_size_pages: Size of the Zone in pages
- *
- * Track information about a zone KBASE_REG_ZONE() and related macros.
- * In future, this could also store the &rb_root that are currently in
- * &kbase_context
- */
-struct kbase_reg_zone {
-	u64 base_pfn;
-	u64 va_size_pages;
 };
 
 /**

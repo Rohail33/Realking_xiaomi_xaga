@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-2.0
+// SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note
 /*
  *
  * (C) COPYRIGHT 2018-2021 ARM Limited. All rights reserved.
@@ -2009,7 +2009,7 @@ int kbase_csf_kcpu_queue_enqueue(struct kbase_context *kctx,
 
 		for (j = 0; j < sizeof(command.padding); j++) {
 			if (command.padding[j] != 0) {
-				dev_dbg(kctx->kbdev->dev,
+				dev_vdbg(kctx->kbdev->dev,
 					"base_kcpu_command padding not 0\n");
 				ret = -EINVAL;
 				goto out;

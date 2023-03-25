@@ -1,4 +1,4 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: GPL-2.0 WITH Linux-syscall-note */
 /*
  *
  * (C) COPYRIGHT 2018, 2020-2021 ARM Limited. All rights reserved.
@@ -19,7 +19,7 @@
  *
  */
 
-/**
+/*
  * Hardware counter types.
  * Contains structures for describing the physical layout of hardware counter
  * dump buffers and enable maps within a system.
@@ -593,8 +593,8 @@ static inline void kbase_hwcnt_enable_map_block_enable_all(
 }
 
 /**
- * kbase_hwcnt_enable_map_block_enable_all() - Enable all values in an enable
- *                                             map.
+ * kbase_hwcnt_enable_map_enable_all() - Enable all values in an enable
+ *                                       map.
  * @dst: Non-NULL pointer to enable map.
  */
 static inline void kbase_hwcnt_enable_map_enable_all(
@@ -1134,7 +1134,7 @@ static inline void kbase_hwcnt_dump_buffer_block_accumulate_strict(
 	}
 }
 
-/**
+/*
  * Iterate over each clock domain in the metadata.
  *
  * @md:          Non-NULL pointer to metadata.

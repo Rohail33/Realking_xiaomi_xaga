@@ -467,10 +467,10 @@ static void _mtk_mfg_init_counter(void)
 	}
 
 	/* Default doesn't enable all HWC */
-	info.bitmask[0] = 0x57; /* JM */
+	info.bitmask[0] = 0x157; /* JM */
 	info.bitmask[1] = 0x2; /* Tiler */
 	info.bitmask[2] = 0xffff; /* Shader */
-	info.bitmask[3] = 0x19CF; /* L2 & MMU */
+	info.bitmask[3] = 0x1FCF; /* L2 & MMU */
 	handle = kbase_gator_hwcnt_init(&info);
 	if (!handle) {
 		pr_info("[PMU]Error init hwcnt\n");
@@ -538,11 +538,7 @@ static int _mtk_mfg_update_counter(void)
 		ktime_get_real_ts64(&tv_end);
 		end_utime = tv_end.tv_sec * 1000000 + (tv_end.tv_nsec / 1000);
 		timd_diff_us = (end_utime > start_utime) ? (end_utime - start_utime) : 0;
-#if defined(CONFIG_MTK_GPUFREQ_V2)
 		gpu_freq = gpufreq_get_cur_freq(TARGET_DEFAULT)*1000;
-#else
-		gpu_freq = mt_gpufreq_get_cur_freq()*1000;
-#endif
 		_mtk_mfg_reset_counter(1);
 		for (i = 0; i < nr_hwc_blocks; i++) {
 			shader_block = 0;
