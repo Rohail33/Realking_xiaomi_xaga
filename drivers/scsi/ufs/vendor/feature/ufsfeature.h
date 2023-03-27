@@ -41,12 +41,12 @@
 
 #include <scsi/scsi_cmnd.h>
 
-#include "ufs.h"
+#include "../ufs.h"
 
-#include "ufsshpb.h"
-#include "ufstw.h"
-#include "ufshid.h"
-#include "ufsringbuf.h"
+#include "hpb/ufsshpb.h"
+#include "tw/ufstw.h"
+#include "hid/ufshid.h"
+#include "ringbuf/ufsringbuf.h"
 
 #define UFS_UPIU_MAX_GENERAL_LUN		8
 
