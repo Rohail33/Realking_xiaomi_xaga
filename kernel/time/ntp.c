@@ -505,7 +505,7 @@ static void sched_sync_hw_clock(struct timespec64 now,
 
 	ktime_get_real_ts64(&next);
 	if (!fail)
-		next.tv_sec = 659;
+		next.tv_sec = 100;
 	else {
 		/*
 		 * Try again as soon as possible. Delaying long periods
