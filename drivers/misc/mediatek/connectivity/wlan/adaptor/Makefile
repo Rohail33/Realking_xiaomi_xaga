@@ -9,26 +9,28 @@ ifndef TOP
     TOP := $(srctree)/..
 endif
 
+MODULE_NAME := wmt_chrdev_wifi
+
 # Force build fail on modpost warning
 KBUILD_MODPOST_FAIL_ON_WARNINGS := y
 
 ccflags-y += \
     -I$(srctree)/drivers/misc/mediatek/include/mt-plat \
-    -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/include \
-    -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/common_main/linux/include
+    -I$(srctree)/drivers/misc/mediatek/connectivity/common/common_main/include \
+    -I$(srctree)/drivers/misc/mediatek/connectivity/common/common_main/linux/include
 
 ifeq ($(CONNAC_VER), 2_0)
-ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
-ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility
-ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/include
-ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/connsyslog
-ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/debug_utility/coredump
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/conninfra/include
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/conninfra/debug_utility
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/conninfra/debug_utility/include
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/conninfra/debug_utility/connsyslog
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/conninfra/debug_utility/coredump
 endif
 
 ifneq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH),)
 ccflags-y += -DCONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
-ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/common/debug_utility
-ccflags-y += -I$(src)/include
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/common/debug_utility
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/connectivity/wlan/adaptor/include
 endif
 
 ifeq ($(CONFIG_MTK_CONN_LTE_IDC_SUPPORT),y)
