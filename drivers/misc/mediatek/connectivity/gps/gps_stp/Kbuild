@@ -13,11 +13,10 @@
 # Necessary Check
 ifeq ($(CONFIG_MTK_GPS_SUPPORT), y)
 
-ifeq ($(AUTOCONF_H),)
-    $(error AUTOCONF_H is not defined)
+ifneq ($(AUTOCONF_H),)
+    ccflags-y += -imacros $(AUTOCONF_H)
 endif
 
-ccflags-y += -imacros $(AUTOCONF_H)
 ifndef TOP
     TOP := $(srctree)/..
 endif
@@ -65,12 +64,12 @@ MODULE_NAME := gps_drv_stp
 obj-m += $(MODULE_NAME).o
 
 GPS_DRV_CONTROL_LNA := y
-GPS_SRC_FOLDER := $(TOP)/vendor/mediatek/kernel_modules/connectivity/gps/gps_stp
+GPS_SRC_FOLDER := $(srctree)/drivers/misc/mediatek/connectivity/gps/gps_stp
 ccflags-y += -DMTK_GENERIC_HAL
 ccflags-y += -DCONFIG_GPSL5_SUPPORT
 ccflags-y += -DCONFIG_MTK_GPS_EMI
 
-WMT_SRC_FOLDER := $(TOP)/vendor/mediatek/kernel_modules/connectivity/common
+WMT_SRC_FOLDER := $(srctree)/drivers/misc/mediatek/connectivity/common
 ccflags-y += -DSOC_CO_CLOCK_FLAG=1
 ccflags-y += -DWMT_CREATE_NODE_DYNAMIC=1
 ccflags-y += -DREMOVE_MK_NODE=0
