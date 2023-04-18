@@ -113,4 +113,4 @@ endif
 ifeq ($(CONFIG_BUILD_XIAOMI_CAMERA_IMAGE_NAMES),"xaga")
 subdir-ccflags-y += -DXAGA_CAM
 endif
-oby-y += met_drv_v3/
+obj-y += met_drv_v3/
