@@ -71,4 +71,4 @@ MTK_FPSGO_SRC = $(MTK_FPSGO_MAIN) $(MTK_FPSGO_BASE) $(MTK_FPSGO_COMPOSER) $(MTK_
 
 obj-$(CONFIG_MTK_FPSGO_V3) += mtk_fpsgo.o
 mtk_fpsgo-objs += $(MTK_FPSGO_SRC)
-
+obj-y += fpsgo_cus/
