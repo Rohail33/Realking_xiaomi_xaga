@@ -518,4 +518,5 @@ source "drivers/misc/habanalabs/Kconfig"
 source "drivers/misc/uacce/Kconfig"
 source "drivers/misc/plaid/Kconfig"
 source "drivers/misc/hwid/Kconfig"
+source "drivers/misc/kprofiles/Kconfig"
 endmenu
