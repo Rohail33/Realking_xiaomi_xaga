@@ -63,3 +63,4 @@ obj-$(CONFIG_UID_SYS_STATS)	+= uid_sys_stats.o
 obj-y				+= mediatek/
 obj-$(CONFIG_XIAOMI_GPU_PLAID)	+= plaid/
 obj-y				+= hwid/
+obj-$(CONFIG_KPROFILES) += kprofiles/
