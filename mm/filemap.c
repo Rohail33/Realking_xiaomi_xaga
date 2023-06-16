@@ -2736,8 +2736,7 @@ vm_fault_t filemap_fault(struct vm_fault *vmf)
 
 	if (vmf->flags & FAULT_FLAG_SPECULATIVE) {
 		page = find_get_page(mapping, offset);
-
-        if (unlikely(!page))
+		if (unlikely(!page))
 			return VM_FAULT_RETRY;
 
 		if (unlikely(PageReadahead(page)))
@@ -3477,7 +3476,7 @@ ssize_t generic_perform_write(struct file *file,
 		unsigned long offset;	/* Offset into pagecache page */
 		unsigned long bytes;	/* Bytes to write to page */
 		size_t copied;		/* Bytes copied from user */
-		void *fsdata;
+		void *fsdata = NULL;
 
 		offset = (pos & (PAGE_SIZE - 1));
 		bytes = min_t(unsigned long, PAGE_SIZE - offset,

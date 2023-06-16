@@ -517,8 +517,10 @@ int mt6660_i2c_probe(struct i2c_client *client,
 	if (ret == 0) {
 		dev_cnt++;
 		mtk_spk_set_type(MTK_SPK_MEDIATEK_MT6660);
-	}
+    }	
+
 	return ret;
+
 probe_fail:
 	_mt6660_chip_power_on(chip, 0);
 	mutex_destroy(&chip->io_lock);
