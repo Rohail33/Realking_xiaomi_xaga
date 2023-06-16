@@ -13,7 +13,7 @@ void mtk_dec_init_ctx_pm(struct mtk_vcodec_ctx *ctx);
 int mtk_vcodec_init_dec_pm(struct mtk_vcodec_dev *dev);
 void mtk_vcodec_release_dec_pm(struct mtk_vcodec_dev *dev);
 
-void mtk_vcodec_dec_pw_on(struct mtk_vcodec_pm *pm, int hw_id);
+int mtk_vcodec_dec_pw_on(struct mtk_vcodec_pm *pm, int hw_id);
 void mtk_vcodec_dec_pw_off(struct mtk_vcodec_pm *pm, int hw_id);
 void mtk_vcodec_dec_clock_on(struct mtk_vcodec_pm *pm, int hw_id);
 void mtk_vcodec_dec_clock_off(struct mtk_vcodec_pm *pm, int hw_id);

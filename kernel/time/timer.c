@@ -2096,6 +2096,7 @@ void __sched usleep_range_state(unsigned long min, unsigned long max,
 {
 	ktime_t exp = ktime_add_us(ktime_get(), min);
 	u64 delta = (u64)(max - min) * NSEC_PER_USEC;
+
 #if IS_ENABLED(CONFIG_MTK_IRQ_MONITOR_DEBUG)
 	u64 temp_count = 0;
 	unsigned long flags = 0;

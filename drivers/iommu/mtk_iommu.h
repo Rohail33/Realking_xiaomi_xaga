@@ -165,6 +165,8 @@ struct mtk_iommu_data {
 
 	struct dma_iommu_mapping	*mapping; /* For mtk_iommu_v1.c */
 
+    struct mutex			mutex; /* Protect m4u_group/m4u_dom above */
+
 	int				isr_cnt;
 	unsigned long			first_jiffies;
 	struct timer_list		iommu_isr_pause_timer;

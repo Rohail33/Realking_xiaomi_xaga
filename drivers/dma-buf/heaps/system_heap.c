@@ -601,17 +601,8 @@ static void system_heap_dma_buf_release(struct dma_buf *dmabuf)
 {
 	struct system_heap_buffer *buffer = dmabuf->priv;
 	int npages = PAGE_ALIGN(buffer->len) / PAGE_SIZE;
-	unsigned long buf_len = buffer->len;
-
-	dmabuf_release_check(dmabuf);
 
 	deferred_free(&buffer->deferred_free, system_heap_buf_free, npages);
-
-	if (atomic64_sub_return(buf_len, &dma_heap_normal_total) < 0) {
-		pr_info("warn: %s, total memory underflow, 0x%lx!!, reset as 0\n",
-			__func__, atomic64_read(&dma_heap_normal_total));
-		atomic64_set(&dma_heap_normal_total, 0);
-	}
 }
 
 static int system_heap_dma_buf_get_flags(struct dma_buf *dmabuf, unsigned long *flags)
@@ -679,7 +670,7 @@ static struct dma_buf *system_heap_do_allocate(struct dma_heap *heap,
 					       unsigned long fd_flags,
 					       unsigned long heap_flags,
 					       bool uncached,
-					       const struct dma_buf_ops *ops)
+						   const struct dma_buf_ops *ops)
 {
 	struct system_heap_buffer *buffer;
 	DEFINE_DMA_BUF_EXPORT_INFO(exp_info);
@@ -787,6 +778,7 @@ free_buffer:
 	list_for_each_entry_safe(page, tmp_page, &pages, lru)
 		__free_pages(page, compound_order(page));
 	kfree(buffer);
+
 	return ERR_PTR(ret);
 }
 
@@ -981,15 +973,16 @@ static int system_heap_create(void)
 		}
 	}
 
-	/* system & mtk_mm heap use same heap show */
-	exp_info.priv = (void *)&system_heap_priv;
-
 	exp_info.name = "system";
 	exp_info.ops = &system_heap_ops;
+
+	/* system & mtk_mm heap use same heap show */
+	exp_info.priv = (void *)&system_heap_priv;
 
 	sys_heap = dma_heap_add(&exp_info);
 	if (IS_ERR(sys_heap))
 		return PTR_ERR(sys_heap);
+
 	pr_info("%s add heap[%s] success\n", __func__, exp_info.name);
 
 	exp_info.name = "mtk_mm";
