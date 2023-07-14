@@ -1993,7 +1993,7 @@ static u32 tcp_tso_segs(struct sock *sk, unsigned int mss_now)
 	tso_segs = ca_ops->tso_segs ?
 		ca_ops->tso_segs(sk, mss_now) :
 		tcp_tso_autosize(sk, mss_now,
-				 READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_min_tso_segs);
+				 READ_ONCE(sock_net(sk)->ipv4.sysctl_tcp_min_tso_segs));
 	return min_t(u32, tso_segs, sk->sk_gso_max_segs);
 }
 
