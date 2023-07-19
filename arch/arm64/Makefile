@@ -177,7 +177,6 @@ zinstall install:
 	$(Q)$(MAKE) $(build)=$(boot) $@
 
 
-ifeq ($(CONFIG_BUILD_ARM64_DT_OVERLAY),y)
 $(KBUILD_DTBO_IMG): dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
@@ -186,7 +185,6 @@ $(KBUILD_DTB_IMG): dtbs
 	$(Q)$(MAKE) $(build)=$(boot) $(boot)/$@
 
 all: $(KBUILD_DTB_IMG)
-endif
 
 PHONY += vdso_install
 vdso_install:
