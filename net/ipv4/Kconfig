@@ -671,7 +671,7 @@ config TCP_CONG_BBR
 
 config TCP_CONG_BBR2
 	tristate "BBR2 TCP"
-	default n
+	default y
 	help
 
 	BBR2 TCP congestion control is a model-based congestion control
@@ -689,7 +689,7 @@ config TCP_CONG_BBR2
 
 choice
 	prompt "Default TCP congestion control"
-	default DEFAULT_CUBIC
+	default DEFAULT_BBR2
 	help
 	  Select the TCP congestion control that will be used by default
 	  for all connections.
@@ -752,7 +752,7 @@ config DEFAULT_TCP_CONG
 	default "cdg" if DEFAULT_CDG
 	default "bbr" if DEFAULT_BBR
 	default "bbr2" if DEFAULT_BBR2
-	default "cubic"
+	default "bbr2"
 
 config TCP_MD5SIG
 	bool "TCP: MD5 Signature Option support (RFC2385)"
