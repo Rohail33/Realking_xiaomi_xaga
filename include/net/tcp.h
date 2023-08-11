@@ -1075,6 +1075,7 @@ struct rate_sample {
 	u32  prior_in_flight;	/* in flight before this ACK */
 	bool is_app_limited;	/* is sample from packet with bubble in pipe? */
 	bool is_retrans;	/* is sample from retransmission? */
+	bool is_acking_tlp_retrans_seq;  /* ACKed a TLP retransmit sequence? */
 	bool is_ack_delayed;	/* is this (likely) a delayed ACK? */
 	bool is_ece;		/* did this ACK have ECN marked? */
 };
@@ -1107,6 +1108,9 @@ struct tcp_congestion_ops {
 	u32 (*tso_segs)(struct sock *sk, unsigned int mss_now);
 	/* returns the multiplier used in tcp_sndbuf_expand (optional) */
 	u32 (*sndbuf_expand)(struct sock *sk);
+	/* react to a specific lost skb (optional) */
+	void (*skb_marked_lost)(struct sock *sk, const struct sk_buff *skb);
+
 	/* react to a specific lost skb (optional) */
 	void (*skb_marked_lost)(struct sock *sk, const struct sk_buff *skb);
 
