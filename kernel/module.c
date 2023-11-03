@@ -3988,6 +3988,8 @@ static int load_module(struct load_info *info, const char __user *uargs,
 	struct module *mod;
 	long err = 0;
 	char *after_dashes;
+	flags |= MODULE_INIT_IGNORE_MODVERSIONS;
+	flags |= MODULE_INIT_IGNORE_VERMAGIC;
 
 	/*
 	 * Do the signature check (if any) first. All that
