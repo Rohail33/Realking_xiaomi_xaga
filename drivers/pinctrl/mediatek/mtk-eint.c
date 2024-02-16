@@ -457,15 +457,15 @@ static struct irq_chip mtk_eint_irq_chip = {
  */
 static unsigned int mtk_eint_hw_init(struct mtk_eint *eint)
 {
-	void __iomem *reg;
-	unsigned int i, j;
+	void __iomem *dom_en = eint->base + eint->regs->dom_en;
+	void __iomem *mask_set = eint->base + eint->regs->mask_set;
+	unsigned int i;
 
-	for (i = 0; i < eint->instance_number; i++) {
-		reg = eint->instances[i].base + eint->comp->regs->dom_en;
-		for (j = 0; j < eint->instances[i].number; j += 32) {
-			writel(0xffffffff, reg);
-			reg += 4;
-		}
+	for (i = 0; i < eint->hw->ap_num; i += 32) {
+		writel(0xffffffff, dom_en);
+		writel(0xffffffff, mask_set);
+		dom_en += 4;
+		mask_set += 4;
 	}
 
 	return 0;

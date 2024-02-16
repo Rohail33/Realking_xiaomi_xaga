@@ -92,26 +92,19 @@ enum ufshcd_ec_pa {
 	UFS_EC_PA_MAX,
 };
 
-/* Host UIC error code data link layer */
-enum ufshcd_ec_dl {
-	UFS_EC_DL_NAC_RECEIVED,
-	UFS_EC_DL_TCx_REPLAY_TIMER_EXPIRED,
-	UFS_EC_DL_AFCx_REQUEST_TIMER_EXPIRED,
-	UFS_EC_DL_FCx_PROTECT_TIMER_EXPIRED,
-	UFS_EC_DL_CRC_ERROR,
-	UFS_EC_DL_RX_BUFFER_OVERFLOW,
-	UFS_EC_DL_MAX_FRAME_LENGTH_EXCEEDED,
-	UFS_EC_DL_WRONG_SEQUENCE_NUMBER,
-	UFS_EC_DL_AFC_FRAME_SYNTAX_ERROR,
-	UFS_EC_DL_NAC_FRAME_SYNTAX_ERROR,
-	UFS_EC_DL_EOF_SYNTAX_ERROR,
-	UFS_EC_DL_FRAME_SYNTAX_ERROR,
-	UFS_EC_DL_BAD_CTRL_SYMBOL_TYPE,
-	UFS_EC_DL_PA_INIT_ERROR,
-	UFS_EC_DL_PA_ERROR_IND_RECEIVED,
-	UFS_EC_DL_MAX,
+/* UFSHCD error handling flags */
+enum {
+	UFSHCD_EH_IN_PROGRESS = (1 << 0),
 };
-#endif
+
+#define ufshcd_set_eh_in_progress(h) \
+	((h)->eh_flags |= UFSHCD_EH_IN_PROGRESS)
+#define ufshcd_eh_in_progress(h) \
+	((h)->eh_flags & UFSHCD_EH_IN_PROGRESS)
+#define ufshcd_clear_eh_in_progress(h) \
+	((h)->eh_flags &= ~UFSHCD_EH_IN_PROGRESS)
+
+
 /**
  * struct uic_command - UIC command structure
  * @command: UIC command
@@ -769,6 +762,7 @@ struct ufs_hba_monitor {
  * @capabilities: UFS Controller Capabilities
  * @nutrs: Transfer Request Queue depth supported by controller
  * @nutmrs: Task Management Queue depth supported by controller
+ * @reserved_slot: Used to submit device commands. Protected by @dev_cmd.lock.
  * @ufs_version: UFS Version to which controller complies
  * @vops: pointer to variant specific operations
  * @priv: pointer to variant specific private data
@@ -857,6 +851,12 @@ struct ufs_hba {
 	u32 capabilities;
 	int nutrs;
 	int nutmrs;
+#if 0
+	/*
+	 * This has been moved into struct ufs_hba_add_info because of the GKI.
+	 */
+	u32 reserved_slot;
+#endif
 	u32 ufs_version;
 	const struct ufs_hba_variant_ops *vops;
 	struct ufs_hba_variant_params *vps;
@@ -1081,6 +1081,12 @@ int ufshcd_wait_for_register(struct ufs_hba *hba, u32 reg, u32 mask,
 void ufshcd_parse_dev_ref_clk_freq(struct ufs_hba *hba, struct clk *refclk);
 void ufshcd_update_evt_hist(struct ufs_hba *hba, u32 id, u32 val);
 void ufshcd_hba_stop(struct ufs_hba *hba);
+void ufshcd_complete_requests(struct ufs_hba *hba);
+void ufshcd_release_scsi_cmd(struct ufs_hba *hba,
+				    struct ufshcd_lrb *lrbp);
+void ufshcd_err_handling_prepare(struct ufs_hba *hba);
+void ufshcd_err_handling_unprepare(struct ufs_hba *hba);
+
 
 static inline void check_upiu_size(void)
 {
@@ -1335,18 +1341,6 @@ static inline int ufshcd_vops_pwr_change_notify(struct ufs_hba *hba,
 					dev_max_params, dev_req_params);
 
 	return -ENOTSUPP;
-}
-
-static inline void ufshcd_vops_setup_xfer_req(struct ufs_hba *hba, int tag,
-					bool is_scsi_cmd)
-{
-	if (hba->vops && hba->vops->setup_xfer_req) {
-		unsigned long flags;
-
-		spin_lock_irqsave(hba->host->host_lock, flags);
-		hba->vops->setup_xfer_req(hba, tag, is_scsi_cmd);
-		spin_unlock_irqrestore(hba->host->host_lock, flags);
-	}
 }
 
 static inline void ufshcd_vops_setup_task_mgmt(struct ufs_hba *hba,

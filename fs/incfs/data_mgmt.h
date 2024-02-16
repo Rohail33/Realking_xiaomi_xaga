@@ -131,8 +131,14 @@ struct mount_info {
 	struct path mi_backing_dir_path;
 
 	struct dentry *mi_index_dir;
+	/* For stacking mounts, if true, this indicates if the index dir needs
+	 * to be freed for this SB otherwise it was created by lower level SB */
+	bool mi_index_free;
 
 	struct dentry *mi_incomplete_dir;
+	/* For stacking mounts, if true, this indicates if the incomplete dir
+	 * needs to be freed for this SB. Similar to mi_index_free */
+	bool mi_incomplete_free;
 
 	const struct cred *mi_owner;
 
@@ -423,7 +429,8 @@ struct incfs_read_data_file_timeouts {
 
 ssize_t incfs_read_data_file_block(struct mem_range dst, struct file *f,
 			int index, struct mem_range tmp,
-			struct incfs_read_data_file_timeouts *timeouts);
+			struct incfs_read_data_file_timeouts *timeouts,
+			unsigned int *delayed_min_us);
 
 ssize_t incfs_read_merkle_tree_blocks(struct mem_range dst,
 				      struct data_file *df, size_t offset);
@@ -435,7 +442,8 @@ int incfs_get_filled_blocks(struct data_file *df,
 int incfs_read_file_signature(struct data_file *df, struct mem_range dst);
 
 int incfs_process_new_data_block(struct data_file *df,
-				 struct incfs_fill_block *block, u8 *data);
+				 struct incfs_fill_block *block, u8 *data,
+				 bool *complete);
 
 int incfs_process_new_hash_block(struct data_file *df,
 				 struct incfs_fill_block *block, u8 *data);

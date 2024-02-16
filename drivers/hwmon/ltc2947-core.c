@@ -396,7 +396,7 @@ static int ltc2947_read_temp(struct device *dev, const u32 attr, long *val,
 		return ret;
 
 	/* in milidegrees celcius, temp is given by: */
-	*val = (__val * 204) + 550;
+	*val = (__val * 204) + 5500;
 
 	return 0;
 }
@@ -989,8 +989,12 @@ static int ltc2947_setup(struct ltc2947_data *st)
 		return ret;
 
 	/* check external clock presence */
-	extclk = devm_clk_get(st->dev, NULL);
-	if (!IS_ERR(extclk)) {
+	extclk = devm_clk_get_optional(st->dev, NULL);
+	if (IS_ERR(extclk))
+		return dev_err_probe(st->dev, PTR_ERR(extclk),
+				     "Failed to get external clock\n");
+
+	if (extclk) {
 		unsigned long rate_hz;
 		u8 pre = 0, div, tbctl;
 		u64 aux;

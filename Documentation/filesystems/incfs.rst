@@ -7,7 +7,7 @@ incfs: A stacked incremental filesystem for Linux
 /sys/fs interface
 =================
 
-Please update Documentation/ABI/testing/sys-fs-incfs if you update this
+Please update Documentation/ABI/testing/sysfs-fs-incfs if you update this
 section.
 
 incfs creates the following files in /sys/fs.
@@ -34,6 +34,9 @@ Features
 
 /sys/fs/incremental-fs/features/zstd
   Reads 'supported'. Present if zstd compression is supported for data blocks.
+
+/sys/fs/incremental-fs/features/bugfix_throttling
+  Reads 'supported'. Present if the throttling lock bug is fixed
 
 Optional per mount
 ------------------

@@ -753,11 +753,12 @@
 				assigned-clocks = <&clk IMX8MN_CLK_ENET_AXI>,
 						  <&clk IMX8MN_CLK_ENET_TIMER>,
 						  <&clk IMX8MN_CLK_ENET_REF>,
-						  <&clk IMX8MN_CLK_ENET_TIMER>;
+						  <&clk IMX8MN_CLK_ENET_PHY_REF>;
 				assigned-clock-parents = <&clk IMX8MN_SYS_PLL1_266M>,
 							 <&clk IMX8MN_SYS_PLL2_100M>,
-							 <&clk IMX8MN_SYS_PLL2_125M>;
-				assigned-clock-rates = <0>, <0>, <125000000>, <100000000>;
+							 <&clk IMX8MN_SYS_PLL2_125M>,
+							 <&clk IMX8MN_SYS_PLL2_50M>;
+				assigned-clock-rates = <0>, <100000000>, <125000000>, <0>;
 				fsl,num-tx-queues = <3>;
 				fsl,num-rx-queues = <3>;
 				status = "disabled";
@@ -808,7 +809,7 @@
 		gpmi: nand-controller@33002000 {
 			compatible = "fsl,imx8mn-gpmi-nand", "fsl,imx7d-gpmi-nand";
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			reg = <0x33002000 0x2000>, <0x33004000 0x4000>;
 			reg-names = "gpmi-nand", "bch";
 			interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL_HIGH>;

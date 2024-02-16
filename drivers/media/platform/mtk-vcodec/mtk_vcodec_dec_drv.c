@@ -119,8 +119,10 @@ static int fops_vcodec_open(struct file *file)
 
 	mtk_vcodec_dec_set_default_params(ctx);
 
-#if IS_ENABLED(CONFIG_VIDEO_MEDIATEK_VCU)
-	if (v4l2_fh_is_singular(&ctx->fh) && VCU_FPTR(vcu_load_firmware)) {
+	if (v4l2_fh_is_singular(&ctx->fh)) {
+		ret = mtk_vcodec_dec_pw_on(&dev->pm);
+		if (ret < 0)
+			goto err_load_fw;
 		/*
 		 * vcu_load_firmware checks if it was loaded already and
 		 * does nothing in that case

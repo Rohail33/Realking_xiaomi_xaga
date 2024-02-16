@@ -30,15 +30,6 @@
 #include "internal.h"
 
 /*
- * This option allows deliberately failing the self-tests for a particular
- * algorithm.  This is for FIPS lab testing only.
- */
-#ifdef CONFIG_CRYPTO_FIPS140_MOD_ERROR_INJECTION
-char *fips140_broken_alg;
-module_param_named(broken_alg, fips140_broken_alg, charp, 0);
-#endif
-
-/*
  * FIPS 140-2 prefers the use of HMAC with a public key over a plain hash.
  */
 u8 __initdata fips140_integ_hmac_key[] = "The quick brown fox jumps over the lazy dog";
@@ -135,6 +126,28 @@ static bool __init fips140_should_unregister_alg(struct crypto_alg *alg)
 	}
 	return false;
 }
+EXPORT_SYMBOL_GPL(fips140_is_approved_service);
+
+/*
+ * FIPS 140-3 requires that modules provide a "service" that outputs "the name
+ * or module identifier and the versioning information that can be correlated
+ * with a validation record".  This function meets that requirement.
+ *
+ * Note: the module also prints this same information to the kernel log when it
+ * is loaded.  That might meet the requirement by itself.  However, given the
+ * vagueness of what counts as a "service", we provide this function too, just
+ * in case the certification lab or CMVP is happier with an explicit function.
+ *
+ * Note: /sys/modules/fips140/scmversion also provides versioning information
+ * about the module.  However that file just shows the bare git commit ID, so it
+ * probably isn't sufficient to meet the FIPS requirement, which seems to want
+ * the "official" module name and version number used in the FIPS certificate.
+ */
+const char *fips140_module_version(void)
+{
+	return FIPS140_MODULE_NAME " " FIPS140_MODULE_VERSION;
+}
+EXPORT_SYMBOL_GPL(fips140_module_version);
 
 /*
  * FIPS 140-3 service indicators.  FIPS 140-3 requires that all services
@@ -397,6 +410,8 @@ static bool __init check_fips140_module_hmac(void)
 				  offset_to_ptr(&fips140_rela_rodata.offset),
 				  fips140_rela_rodata.count);
 
+	fips140_inject_integrity_failure(textcopy);
+
 	tfm = crypto_alloc_shash("hmac(sha256)", 0, 0);
 	if (IS_ERR(tfm)) {
 		pr_err("failed to allocate hmac tfm (%ld)\n", PTR_ERR(tfm));
@@ -543,6 +558,9 @@ fips140_init(void)
 	complete_all(&fips140_tests_done);
 
 	if (!update_fips140_library_routines())
+		goto panic;
+
+	if (!fips140_eval_testing_init())
 		goto panic;
 
 	pr_info("module successfully loaded\n");

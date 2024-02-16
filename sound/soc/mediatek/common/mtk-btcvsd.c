@@ -1099,11 +1099,9 @@ static int mtk_pcm_btcvsd_copy(struct snd_soc_component *component,
 	struct mtk_btcvsd_snd *bt = snd_soc_component_get_drvdata(component);
 
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-		mtk_btcvsd_snd_write(bt, buf, count);
+		return mtk_btcvsd_snd_write(bt, buf, count);
 	else
-		mtk_btcvsd_snd_read(bt, buf, count);
-
-	return 0;
+		return mtk_btcvsd_snd_read(bt, buf, count);
 }
 
 /* kcontrol */
@@ -1445,14 +1443,6 @@ static int mtk_btcvsd_snd_probe(struct platform_device *pdev)
 	if (ret) {
 		dev_warn(dev, "%s(), get offset fail, ret %d\n", __func__, ret);
 		goto unmap_bank2_err;
-	}
-	/* get disable_write_silence */
-	ret = of_property_read_u32(dev->of_node, "disable_write_silence",
-				     &disable_write_silence);
-	if (ret) {
-		dev_dbg(dev,
-			"%s(), get disable_write_silence fail %d, set 0\n"
-			, __func__, ret);
 	}
 
 	btcvsd->infra_misc_offset = offset[0];
